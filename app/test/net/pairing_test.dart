@@ -102,6 +102,7 @@ void main() {
     final done = (await flow(api).run().toList()).last as PairingApproved;
     expect(done.laptop.addresses.map((a) => a.host), ['192.168.1.6', 'my-laptop.tail.ts.net']);
     expect(done.laptop.addresses.last.kind, 'manual');
+    expect(done.laptop.addresses.last.isTailscale, isTrue);
     expect(done.laptop.lastHost, 'my-laptop.tail.ts.net');
   });
 

@@ -12,7 +12,7 @@ import 'address_race.dart';
 import 'backoff.dart';
 import 'link_state.dart';
 
-typedef ApiFactory = LaptopApi Function(String host, int port, Uint8List pin);
+typedef ApiFactory = LaptopApi Function(String host, int port, Uint8List? pin);
 
 sealed class _Outcome {
   const _Outcome();
@@ -41,6 +41,8 @@ class _Terminal extends _Outcome {
 
 const _maxImmediateRetries = 2;
 
+bool _always() => true;
+
 /// The link between this phone and one paired laptop (docs/connection-state.md).
 ///
 /// It holds a "connect intent": Disconnect clears it, while network loss keeps it and reconnects
@@ -55,6 +57,7 @@ class LaptopConnection extends ChangeNotifier {
     required this.cache,
     Future<void> Function(Duration)? wait,
     Backoff? backoff,
+    this.autoReconnect = _always,
   })  : _laptop = laptop,
         _wait = wait ?? Future.delayed,
         _backoff = backoff ?? Backoff();
@@ -66,6 +69,9 @@ class LaptopConnection extends ChangeNotifier {
   final HistoryCache cache;
   final Future<void> Function(Duration) _wait;
   final Backoff _backoff;
+
+  /// When off, one attempt is made and a failure is not retried.
+  final bool Function() autoReconnect;
 
   Laptop _laptop;
   LinkState _state = LinkState.paired;
@@ -132,6 +138,10 @@ class LaptopConnection extends ChangeNotifier {
           continue;
         case _Retry(:final after):
           _set(LinkState.unreachable);
+          if (!autoReconnect()) {
+            _intent = false;
+            return;
+          }
           await _wait(after ?? _backoff.next());
       }
     }
@@ -209,6 +219,13 @@ class LaptopConnection extends ChangeNotifier {
   }
 
   /// Refreshes the saved addresses after every successful connect; manual ones are kept.
+  /// Learns an address the laptop was discovered at, so later connects can use it.
+  Future<void> learnAddress(LaptopAddress address) async {
+    if (_laptop.addresses.contains(address)) return;
+    _laptop = _laptop.copyWith(addresses: [..._laptop.addresses, address]);
+    await store.save(_laptop);
+  }
+
   Future<void> _remember(List<LaptopAddress> fresh, LaptopAddress used) async {
     final manual = _laptop.addresses.where((a) => a.kind == 'manual' && !fresh.contains(a));
     _laptop = _laptop.copyWith(addresses: [...fresh, ...manual], lastHost: used.host);

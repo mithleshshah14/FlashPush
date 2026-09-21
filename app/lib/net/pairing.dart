@@ -62,7 +62,16 @@ class PairingFlow {
   /// Stops polling; the stream ends without a final event.
   void cancel() => _cancelled = true;
 
+  /// Runs the flow and closes its connection when it ends or is cancelled.
   Stream<PairingProgress> run() async* {
+    try {
+      yield* _run();
+    } finally {
+      api.close();
+    }
+  }
+
+  Stream<PairingProgress> _run() async* {
     final np = _nonce();
     final PairRequest request;
     final Uint8List fingerprint;

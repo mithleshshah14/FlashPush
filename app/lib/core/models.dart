@@ -58,7 +58,7 @@ class LaptopAddress {
   final int port;
   final String kind;
 
-  bool get isTailscale => kind == 'tailscale';
+  bool get isTailscale => kind == 'tailscale' || (kind == 'manual' && isTailscaleHost(host));
 
   factory LaptopAddress.fromJson(Map<String, dynamic> json) =>
       LaptopAddress(host: json['host'] as String, port: json['port'] as int, kind: json['kind'] as String);
@@ -119,4 +119,13 @@ class DiscoveredLaptop {
   final String name;
   final String host;
   final int port;
+}
+
+/// Tailscale addresses: 100.64.0.0/10 or a MagicDNS name (*.ts.net).
+bool isTailscaleHost(String host) {
+  if (host.toLowerCase().endsWith('.ts.net')) return true;
+  final parts = host.split('.');
+  if (parts.length != 4) return false;
+  final octets = parts.map(int.tryParse).toList();
+  return octets[0] == 100 && octets[1] != null && octets[1]! >= 64 && octets[1]! <= 127;
 }

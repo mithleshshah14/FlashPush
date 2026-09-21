@@ -35,7 +35,7 @@ class FakeNetwork {
   StreamController<SseEvent>? events;
   int eventsOpened = 0;
 
-  LaptopApi apiFor(String host, int port, Uint8List pin) {
+  LaptopApi apiFor(String host, int port, Uint8List? pin) {
     final api = FakeLaptopApi(this, host, port);
     apis.add(api);
     return api;
