@@ -135,3 +135,20 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
 | Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
 | v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |
+
+## Plan 3 - Android app v2
+
+| Decision | Choice | Why |
+|---|---|---|
+| State management | plain `ChangeNotifier` controllers, no package | one app-level controller and one connection object per laptop; nothing here needs more |
+| Network seam | `LaptopApi` interface; `HttpLaptopApi` is tested against the **real Node server** | everything above the wire is tested with fakes, and the real client with the real laptop, so the two sides cannot drift |
+| Certificate pinning | `HttpClient` with no trusted roots; every certificate goes through one pure acceptance rule (`acceptCertificate`) | a laptop is only trusted by the fingerprint that was approved; the device secret is only sent on a pinned client (`connect` refuses otherwise) |
+| Open the event stream before fetching the list | listen first, then fetch | the laptop does not replay events, so fetch-then-listen could miss one (found by a flaky integration test) |
+| Images cached as files, not thumbnails | received images are stored (bounded to 100 MB, oldest evicted) and decoded at thumbnail size on screen | avoids an image-processing dependency; the plan said "thumbnails" |
+| Re-pair does not forget first | it starts a new pairing at the laptop's last address; success replaces the old credentials and pin, cancelling changes nothing | forgetting first would lose the pairing and history if the user backs out, and raced with the screen closing itself |
+| Tailscale detection | 100.64.0.0/10 and `*.ts.net`, also for typed addresses | the Wi-Fi/link icons and the route chip depend on it |
+| Discovery targets | `255.255.255.255` plus `x.y.z.255` per interface address (a /24 is assumed) | Dart exposes no netmasks; Add by address covers other networks |
+| Fonts | system fonts, monospace for addresses/sizes/code | the design names Manrope, Inter and JetBrains Mono; bundling them adds files and a licence step for no functional gain (revisit if branding requires it) |
+| Background gradient | flat navy (`#030C1E`) instead of the fade to `#112B58` | flat surfaces per the design's own "restrained" rule; trivial to add later |
+| Not done | camera capture for the Image choice; the adaptive launcher icon and monochrome layer | Image uses the system gallery picker. The icon needs a transparent foreground cut from `app_icon.png`, which needs image tooling; tracked in the spec section 9.1 |
+| Test servers | the integration test launches the unmodified server through `loopback_server.js`, which forces all listeners onto 127.0.0.1 | tests must never open a port on the network |

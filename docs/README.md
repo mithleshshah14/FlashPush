@@ -11,7 +11,6 @@
 | [security.md](security.md) | threats and protections, what is not protected, review checklist | written (Plan 1B-ii-b) |
 | [protocol.md](protocol.md) | device API, admin API and UDP discovery reference | written (Plans 1B-ii-a/b) |
 | [transfers.md](transfers.md) | file lifecycle, limits, path safety, retention, per-phone history | written (Plan 1B-i) |
-| connection-state.md | phone/laptop state machines and reconnect rules | written during implementation |
 | [superpowers/plans/2026-09-21-v2-plan-index.md](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans: index of 7 plans, with Plan 1A (server security core) written in full | Plan 1A done (77 tests); 1B next |
 | architecture.md | how the pieces fit | written during implementation |
 | protocol.md | full HTTP/UDP protocol reference | written during implementation |
@@ -21,3 +20,5 @@
 | design/ | Stitch screens and design tokens | after spec approval |
 
 Process: brainstorm → written spec → implementation plan → test-first implementation → docs updated in the same change.
+| [connection-state.md](connection-state.md) | phone connection states, reconnect rules, address choice | written (Plan 3) |
+| [testing.md](testing.md) | automated coverage, test rules, manual checklist for a real phone | written (Plan 3) |

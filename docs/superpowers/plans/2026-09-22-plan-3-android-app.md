@@ -147,3 +147,13 @@
 **Placeholder scan:** none; unspecified code is fully determined by the interfaces and tests listed per task.
 
 **Type consistency:** `LaptopApi` (Task 3) is the only network seam used by Tasks 6, 7, 8; `Laptop`, `Credentials`, `Item` (Task 2) are the only models passed between layers; `LinkState` (Task 6) is consumed by Tasks 9-11.
+
+## Progress (updated as the work was done)
+
+All tasks below are done, test-first, one commit per task. Deviations from the plan as written:
+
+- **Task 3:** `ApiFactory` takes a nullable pin (`null` for the first contact of a pairing); `thumbnail()` was dropped from `LaptopApi` (received images are cached as files and decoded at thumbnail size).
+- **Task 6:** `LaptopConnection` also owns `imageFile`, `learnAddress`, an `autoReconnect` switch, and opens the event stream **before** fetching the list.
+- **Task 8:** `forget` returns nothing; `addressOf(id)` supports Re-pair, which no longer forgets first.
+- **Tasks 9-12:** the UI was split into small files (`connection_controls`, `devices_page`, `pairing_page`, `laptop_detail_page`, `message_list`, `image_grid`, `file_list`, `new_transfer_sheet`, `transfer_tab`, `problem_view`, `settings_page`, `platform_actions`, `format`, `empty_tab`); the platform seam (`PlatformActions`) replaces direct calls to the picker, `url_launcher` and the native bridge so screens are testable.
+- **Not done:** camera capture for the Image choice; adaptive launcher icon (see `docs/decisions.md`, Plan 3).

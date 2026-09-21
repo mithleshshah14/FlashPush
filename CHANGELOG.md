@@ -2,6 +2,17 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-09-22
+
+### Built (Plan 3, branch `feature/android-app-v2`)
+- **Android app v2** (Flutter): automatic discovery (UDP, with the 3/6/12 s scan policy) and Add by address (IP or Tailscale name); pairing with the matching 6-digit code (commit-reveal exactly as `docs/pairing.md`); one-tap connect/disconnect through two icon buttons (Wi-Fi, link) with no status words; laptop screen with separate **Messages / Images / Files** tabs, **New transfer** (Image / Text / Document), history cached for offline reading; retry-safe sending with progress; save to Downloads/FlashPush; Settings; Share to FlashPush; problem screens for "Not paired anymore" and "Laptop identity changed".
+- **Security:** HTTPS only with certificate pinning (no trusted roots; the device secret is never sent on an unpinned connection), secrets only in Android secure storage, no cleartext, only the `INTERNET` permission.
+- **Connection state machine:** intent-based reconnect with 2 s to 60 s backoff, foreground only, address race (parallel, 3 s per candidate, losers cancelled), immediate reconnect on an expired session, terminal states for a revoked phone or a changed certificate.
+- Removed the v1 QR/token app, the `http` and `mobile_scanner` packages and the cleartext flag.
+- **Tests:** `flutter analyze` clean and **170 tests passing**, including the known-answer crypto vectors and an integration test against the real Node server over TLS (loopback only).
+- Docs: `docs/connection-state.md`, `docs/testing.md` (with the manual checklist for a real phone), `app/README.md`, plan `docs/superpowers/plans/2026-09-22-plan-3-android-app.md`.
+- Found and fixed while building: a lost-event race (the event stream is now opened before the list is fetched), concurrent cache writes corrupting `items.json`, a future that waited on itself in the image cache, and discovery notifying during the first build.
+
 ## 2026-09-21
 
 ### Added
