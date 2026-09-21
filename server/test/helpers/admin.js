@@ -61,9 +61,9 @@ async function startAdmin(t, limitOverrides = {}) {
       payload = JSON.stringify(json);
       h['content-type'] = 'application/json';
     }
-    // node:http (not fetch) so the Host header can be forged in the guard tests
+    // node:http (not fetch) so the Host header can be forged in the guard tests; agent:false so no socket is reused after a stop
     return new Promise((resolve, reject) => {
-      const req = http.request({ host: '127.0.0.1', port: ports.admin, method, path: urlPath, headers: h }, (res) => {
+      const req = http.request({ host: '127.0.0.1', port: ports.admin, method, path: urlPath, headers: h, agent: false }, (res) => {
         const chunks = [];
         res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', () => {
@@ -85,7 +85,7 @@ async function startAdmin(t, limitOverrides = {}) {
   /** Opens the admin event stream and resolves the next named event (or null). */
   function events() {
     return new Promise((resolve, reject) => {
-      const req = http.request({ host: '127.0.0.1', port: ports.admin, path: '/admin/events', headers: { host: `127.0.0.1:${ports.admin}` } }, (res) => {
+      const req = http.request({ host: '127.0.0.1', port: ports.admin, path: '/admin/events', headers: { host: `127.0.0.1:${ports.admin}` }, agent: false }, (res) => {
         let buffer = '';
         const waiters = [];
         res.on('data', (chunk) => {
