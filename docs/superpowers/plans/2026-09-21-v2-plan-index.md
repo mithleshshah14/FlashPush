@@ -7,7 +7,8 @@ The spec covers several independent subsystems, so it is split into plans that e
 | # | Plan | Delivers | Spec sections | Depends on | Detail |
 |---|---|---|---|---|---|
 | 1A | **Server security core** | crypto primitives, identity, TLS cert, device store, sessions, rate limiter, idempotency, pairing state machine, all unit-tested | §3, §4.1–4.2 | none | [written](2026-09-21-plan-1a-server-security-core.md) |
-| 1B | **Server API and transfers** | error-enveloped HTTPS `/v1` API, loopback admin API, UDP discovery, addresses, streamed file transfers with limits, storage/retention, new `index.js`, full pairing → send → revoke integration test, `architecture.md` / `protocol.md` / `security.md` / `transfers.md` | §2, §4.3, §5.1, §7, §11 | 1A | to write |
+| 1B-i | **Server foundations** | address classification, per-phone history store, safe streamed uploads, UDP discovery | §5.1-5.2, §7 | 1A | [done](2026-09-22-plan-1b-i-server-foundations.md) |
+| 1B-ii | **Server API and wiring** | error-enveloped HTTPS `/v1` API (pairing, sessions, items, files, SSE, idempotency), loopback admin API + temporary admin page, new `index.js`, full pairing → send → revoke integration test, `architecture.md` / `protocol.md` / `security.md` | §2, §4, §11 | 1B-i | to write |
 | 2 | **Stitch designs** | Android screens and laptop UI screens, design tokens from the icon palette, `docs/design/` | §9, §10 | none (can run beside 1A/1B) | to write |
 | 3 | **Android app v2** | pinned-TLS client, secure storage, discovery, laptops list, pairing UI, Connect/Disconnect, text + file transfer against `/v1` | §6, §9 | 1B, 2 | to write |
 | 4 | **Laptop web UI** | dashboard, approvals, devices, "Can't connect" panel, favicon | §10 | 1B, 2 | to write |

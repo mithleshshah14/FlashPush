@@ -83,3 +83,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Bottom navigation | Devices, Transfer, Settings; the Transfer tab is a shortcut to the connected laptop's detail screen | keeps the earlier Transfer/Settings request without two screens doing the same job |
 | History offline | phone caches item metadata and image thumbnails per laptop | history must be readable while disconnected |
 | Items belong to one phone | every history entry has a `deviceId`; a phone sees only its own; files carry a `mime` type | several paired phones must not read each other's messages; `mime` lets the phone split Images from Files |
+
+## Plan 1B-i — server foundations
+
+| Decision | Choice | Why |
+|---|---|---|
+| Address classification | built in 1B-i (`addresses.js`), MagicDNS and the phone's address race stay in Plan 6 | the route (Wi-Fi vs Tailscale) is needed on the approval card at pairing time |
+| Upload part file | `<name>.<random>.part`; final name chosen synchronously just before the rename | two uploads of one name cannot collide or overwrite each other |
+| Discovery replies | rate limited to 20 per 10 s per source address | a UDP responder must not be usable as an amplifier or a flood target |
+| Received files vs history | pruning or deleting a history entry never deletes a file in Downloads | the user's own files must not disappear because a list got trimmed |
+| Item ownership | entries carry `deviceId` and are filtered per phone | several paired phones must not read each other's messages |
