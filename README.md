@@ -8,7 +8,8 @@ Send text, links and files between your Android phone and your Windows laptop, o
 |---|---|
 | v1 prototype (shared token + QR code, plain HTTP) | server part removed; the old Android app is being replaced |
 | v2 server (pairing, approval, HTTPS, per-phone history, transfers, discovery, admin API) | **built and tested** (169 tests) |
-| v2 Android app, Stitch-designed laptop UI, Windows tray + autostart, Tailscale support | designed; being built |
+| v2 Android app (pairing, discovery, Messages/Images/Files, Tailscale-aware reconnect) | **built and tested** (170 tests); real-device checks pending, see `docs/testing.md` |
+| Stitch-designed laptop UI, Windows tray + autostart | designed; being built |
 
 v2 is designed in [`docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md`](docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md).
 
@@ -44,7 +45,7 @@ npm start
 
 Open the address it prints (`http://127.0.0.1:8760`, this laptop only) to approve phones, send text and files, and manage devices. Run the one-time firewall step, and see the tray icon and start-with-Windows options, in [`docs/setup.md`](docs/setup.md). Details: [`server/README.md`](server/README.md). Tests: `cd server && npm test`.
 
-The Android app in `app/` is still the v1 prototype and does not work with the v2 server until its plan lands; see [`docs/superpowers/plans/2026-09-21-v2-plan-index.md`](docs/superpowers/plans/2026-09-21-v2-plan-index.md).
+The Android app in `app/` is the v2 app (see [`app/README.md`](app/README.md)); the remaining plans are listed in [`docs/superpowers/plans/2026-09-21-v2-plan-index.md`](docs/superpowers/plans/2026-09-21-v2-plan-index.md).
 
 ## Documentation
 
