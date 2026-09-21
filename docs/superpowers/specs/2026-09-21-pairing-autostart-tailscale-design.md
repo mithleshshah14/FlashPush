@@ -279,7 +279,7 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 
 ## 8. Laptop: autostart, tray, lifecycle
 
-- **Autostart:** launcher `FlashPush.vbs` in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` runs `node.exe src\index.js` hidden (window style 0). Installed/removed by `node src/index.js --install-autostart` / `--uninstall-autostart` or the tray toggle. No admin rights. The `node.exe` path is recorded at install time.
+- **Autostart:** launcher `FlashPush.vbs` in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` runs `node.exe src\cli.js` hidden (window style 0). Installed/removed by `node src/cli.js --install-autostart` / `--uninstall-autostart` or the tray toggle. No admin rights. The `node.exe` path is recorded at install time.
 - **Single instance:** at start, if `127.0.0.1:8760` already answers `/admin/ping` with the FlashPush signature, the new process opens the UI and exits.
 - **Start-up states** (`lifecycle.js`, shown by the tray icon and admin UI): `starting` → `running`, or `degraded` when a listener failed (for example port 8765 taken). Degraded names the real cause ("Port 8765 is used by another program") in the tray tooltip, a notification and the UI, and keeps the working listeners up. `stopped` after Stop.
 - **Tray** (Windows PowerShell hosting `System.Windows.Forms.NotifyIcon`, controlled by Node over newline-delimited JSON on stdin/stdout, no npm dependency; it exits when Node's stdin closes):
