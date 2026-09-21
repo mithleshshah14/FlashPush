@@ -80,7 +80,7 @@ The first setup required 1 approval plus a code-owner review. In a repository wi
 
 Merging a pull request with **Squash and merge** replaces its commits by one commit on the target branch: `develop` and `main` on GitHub show one commit for the whole first feature, and the detailed history (112 commits) exists only on `feature/v2-pairing-autostart-tailscale`. **Keep that branch** (do not use "Delete branch"), or use **Create a merge commit** instead of squash for future pull requests.
 
-Two-factor authentication on the GitHub account could not be verified through the API with the current token scopes: check it in Settings → Password and authentication.
+Two-factor authentication on the GitHub account is **enabled** (confirmed by the owner; the API cannot show it with the current token scopes).
 
 ### Files only take effect on the default branch
 

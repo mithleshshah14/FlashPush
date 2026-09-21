@@ -134,6 +134,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - The first feature was merged to `develop` and `main` by pull request (squash), so GitHub shows one commit each; the detailed history stays on `feature/v2-pairing-autostart-tailscale`.
 - Branch protection relaxed for a solo maintainer: PR still required, no approval or code-owner review needed, no force pushes or deletions (`docs/repo-security.md`).
 
+### License
+- Added the **GNU General Public License v3.0** (`LICENSE`, README section, `license` field, contribution clause). 2FA on the owner account confirmed.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

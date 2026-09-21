@@ -19,4 +19,5 @@ Thank you for helping. The only way changes get into this repository is a **pull
 - **Security first**: read [`docs/security.md`](docs/security.md) and its review checklist before adding a route or a permission.
 - **Keep tests from running scripts.** Tests must not launch PowerShell, VBS hosts, `netsh` and similar, and must not open network-wide listeners ([`docs/dev-safety.md`](docs/dev-safety.md)); `npm test` enforces this.
 - Small, focused changes; clean code over clever code; no speculative features.
+- **License:** by opening a pull request you agree that your contribution is licensed under the [GNU GPL v3](LICENSE), like the rest of the project.
 - Security problems go through [`SECURITY.md`](SECURITY.md), not public issues.
