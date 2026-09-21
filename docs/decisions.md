@@ -115,3 +115,10 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Duplicate in-flight transfer | `429` + `Retry-After: 1` | no promise plumbing; the phone retries and gets the stored result |
 | Session `start` event | added to `SessionStore` | the admin UI refreshes when a phone connects |
 | Test harness | real modules, plain HTTP, `fetch`, phone flow helper `pairDevice` | every route is exercised over the wire, not by calling functions |
+
+## 2026-09-22 — Stitch review, round 2 and working mode
+
+| Decision | Choice | Why |
+|---|---|---|
+| Header icons | drawn as buttons; the connection icon **is** the connect/disconnect control; no status text next to them | requested; one control instead of icon + text + button |
+| Working mode | run the remaining plans as a pipeline without asking between steps; report when done so the user can test | requested; guardrails: security, clean code, documentation |
