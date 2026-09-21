@@ -32,7 +32,7 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 | Devices: laptops list (connected / Tailscale route / not paired), **icon buttons (v3)** | dark | `a83b6859ea9b45a89a5e70045cdf0ece` | `screens/android-devices-list.png` |
 | Devices: laptops list, **icon buttons (v3)** | light | `b20d49fd810b44f1ac2de22291631382` | `screens/android-devices-list-light.png` |
 | Devices: empty state ("Looking for your laptop...") | dark | `3241560b717e4fd99999761d013a1553` | `screens/android-devices-empty.png` |
-| Add laptop by address (bottom sheet) | dark | `06453225d7854d828481c32b77335b21` | `screens/android-add-by-address.png` |
+| Add laptop by address (bottom sheet, dimmed tab bar behind it) | dark | `6213ae7f53f74c58962847c0be862ba6` | `screens/android-add-by-address.png` |
 | Pairing: waiting, code `482 916` (header: back + title only, no session yet) | dark | `23b1fdbdaae548e2a55e06e9670e3f63` | `screens/android-pairing-waiting.png` |
 | Pairing: approved, **icon buttons (v3)** | dark | `443a2bdd675640e5879babd523b3698d` | `screens/android-pairing-approved.png` |
 | Pairing: denied | dark | `5c79cc21fddd4908a3cf27ab33868bf2` | `screens/android-pairing-denied.png` |
@@ -44,7 +44,9 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 | Laptop detail: Images, empty, **icon buttons (v3)** | dark | `432109ac80e747219cced4dbe150f295` | `screens/android-detail-images-empty.png` |
 | Laptop detail: Files (with a file mid-transfer), **icon buttons (v3)** | dark | `72ed333580064425a2446cd8e29c3eea` | `screens/android-detail-files.png` |
 | Laptop detail: Files, empty, **icon buttons (v3)** | dark | `f9fd8a0372c94654b493b1b677348737` | `screens/android-detail-files-empty.png` |
-| Laptop detail: not connected (offline banner, saved history, "Connect to send") | dark | `babf3c643e824d7396126b84aa752e37` | `screens/android-detail-not-connected.png` |
+| Laptop detail: not connected (both buttons OFF, link = tap to connect; offline banner, saved history, "Connect to send") | dark | `050f39fc71fd4c83b996c148d2cac93d` |
+| Laptop detail: Tailscale route (Wi-Fi OFF, link ON, route only in a tooltip bubble under the Wi-Fi button, no caption) | dark | `008ec8ab34f04cff9566ce0124e05efd` |
+| Route popup (tap the Wi-Fi button: Wi-Fi / Tailscale / address) | dark | `de63806d9b9649aea7ce3802cb7b1707` | `screens/android-detail-not-connected.png` |
 | New transfer: choose type (Image / Text / Document) | dark | `0e511268de98464a8e7eeae7bd5fbde3` | `screens/android-new-transfer-sheet.png` |
 | New transfer: Text compose, **icon buttons (v3)** | dark | `03a00ccd64364674a6219d46db290903` | `screens/android-new-transfer-text.png` |
 | Transfer tab: not connected ("Connect a laptop first") | dark | `f5d523438acf437696571061f33f28b4` | `screens/android-transfer-not-connected.png` |
@@ -64,19 +66,25 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 
 ## Icon-button pass (header connection controls): status
 
-Target spec: [`.stitch/DESIGN.md`](../../.stitch/DESIGN.md) §6 (two rounded 44–48 dp icon buttons, link = connect/disconnect action replacing the text button, no status words, green = on / grey = off, "via Tailscale" only as a tooltip).
+**Complete on every phone screen that shows connection state** (2026-09-22). Spec: [`.stitch/DESIGN.md`](../../.stitch/DESIGN.md) §6: two rounded 44 dp icon buttons, the link button is the connect/disconnect action and replaces the text button, no status words, green = on / grey = off, the route named only in a tooltip.
 
 | Screen | Header / row controls |
 |---|---|
-| Devices list, dark (`a83b6859…`) | **v3 done.** Row buttons for all three states; the Tailscale row shows Wi-Fi grey and link green; pairing state moved into the subtitle (`100.101.102.103 · Paired`) so no status text sits next to the icons |
-| Laptop detail: Messages (`f22d86df…`) | **v3 done** (both ON) |
-| Laptop detail: Images empty (`432109ac80e747219cced4dbe150f295`) | **v3 done** (both ON, no text button) |
-| Laptop detail: Images (`38a4331b...`), Files (`72ed3335...`), Files empty (`f9fd8a03...`) | **v3 done** (both ON, no text button) |
-| Laptop detail: not connected | v2 (`babf3c64...`). **Still to convert (both OFF, link = tap to connect)** |
-| Laptop detail: Tailscale route | `ad67d5f8966c405a92435e2f5a36add6` exists but has a visible "via Tailscale" caption, which is **not allowed**; superseded. **To create:** Wi-Fi OFF, link ON, route shown by an info tooltip bubble on the Wi-Fi icon; plus a small route popup (Wi-Fi / Tailscale / address) |
-| Devices list light (`b20d49fd...`), Pairing approved (`443a2bdd...`), New transfer text (`03a00ccd...`) | **v3 done** |
-| Pairing waiting (`23b1fdbd...`) | **done**: header is back arrow and title only (no session exists yet); consistent style |
-| Devices empty, Add by address, pairing denied / expired, problem states, Settings, Transfer not connected | no connection state in the header. Add by address still lacks the dimmed tab bar behind its sheet (batch 3) |
+| Devices list, dark (`a83b6859...`) and light (`b20d49fd...`) | v3: row buttons for all three states; Tailscale row has Wi-Fi grey, link green; pairing state sits in the subtitle |
+| Laptop detail Messages (`f22d86df...`), Images (`38a4331b...`), Images empty (`432109ac...`), Files (`72ed3335...`), Files empty (`f9fd8a03...`) | v3, both ON |
+| Laptop detail not connected (`050f39fc...`) | v3, both OFF, link = tap to connect |
+| Laptop detail, Tailscale route (`008ec8ab...`) | v3, Wi-Fi OFF + link ON; a tooltip bubble under the Wi-Fi button names the route (no caption under the laptop name) |
+| Route popup (`de63806d...`) | new: the popup opened by the Wi-Fi button |
+| Pairing approved (`443a2bdd...`), New transfer Text (`03a00ccd...`) | v3, both ON |
+| Pairing waiting (`23b1fdbd...`) | header is back arrow and title only (no session yet) |
+| Devices empty, pairing denied / expired, problem states, Settings, Transfer not connected, New transfer sheet | no connection state in the header |
+
+Known cosmetic issues in the generated designs (fix on regeneration):
+
+- Route popup: Stitch added an unrequested "Mesh" tag chip next to Tailscale.
+- Add by address: the faded background cards still show the old words "Connected" / "Paired" next to the chips.
+- Tailscale route: the `New transfer` button is partly clipped by the tab bar.
+- Several exports are a phone mockup on a 2560×2048 canvas rather than a native 780×1830 artboard (same content).
 
 The laptop web UI is approved and untouched.
 
@@ -101,6 +109,9 @@ Stitch has no delete tool, so earlier iterations remain in the project. Do not i
 |---|---|---|
 | `a3baf43c392c4af69c08fbef4dff1c10` | Devices list with small icons and text pairing status (v2) | `a83b6859…` |
 | `b32a29cf1a9e4dc695edddfbe2b61fd9` | laptop detail Messages with small icons plus a text Disconnect button (v2) | `f22d86df…` |
+| `babf3c643e824d7396126b84aa752e37`, `9e078367c2a34073b109bc087ee163b2` | offline detail with small icons plus a text Connect button (v2) | `050f39fc...` |
+| `ad67d5f8966c405a92435e2f5a36add6` | Tailscale route with a visible caption (not allowed) | `008ec8ab...` |
+| `06453225d7854d828481c32b77335b21` | Add by address without the tab bar behind the sheet | `6213ae7f...` |
 | `0256a34dbb6145bd9f5916021b32c16f` | first Devices list (invented "MDNS", port and "Mesh" details) | `a3baf43c…` |
 | `1c2a89cd85044fb588899d9c6a8cdeae` | Devices list with details removed but "Connected" word kept | `a3baf43c…` |
 | `5bfc3bf76e4d4ae1a36dc734e7384ad9`, `0d5b5a2b06cc4139ba9bd84b4931a2cb` | light Devices list with text status / v2 icons | `b20d49fd...` |

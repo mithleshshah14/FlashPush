@@ -12,8 +12,8 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed
 - Design decisions taken from user review (recorded in `docs/decisions.md`): connection state is two icon buttons (Wi-Fi status + link action) with no status words, green = on / grey = off; tapping a laptop opens a detail screen with history split into Messages / Images / Files and a "New transfer" flow; the Transfer tab is a shortcut to the connected laptop's detail.
 
-### Partially done
-- **Icon-button connection controls (v3)** applied to the Devices list (dark) and laptop detail Messages; the remaining phone screens still show the previous small-icon header and are listed with the exact prompt in `docs/design/README.md`.
+### Design pass completed
+- **Icon-button connection controls (v3)** now on every phone screen that shows connection state (Devices list dark and light, laptop detail Messages / Images / Files and their empty states, offline, Tailscale route, pairing waiting / approved, New transfer text). Added: Tailscale-route screen (route named in a tooltip bubble on the Wi-Fi button), route popup, Add-by-address with the dimmed tab bar behind the sheet. Cosmetic issues and superseded ids are listed in `docs/design/README.md`.
 
 ### Notes
 - Stitch limitations found and documented: `edit_screens` does not persist, `generate_variants` keeps only the first change and returns one variant per call, listing lags after generation. Superseded iterations remain in the Stitch project (no delete tool) and are listed in `docs/design/README.md`.
