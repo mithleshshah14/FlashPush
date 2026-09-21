@@ -1,6 +1,6 @@
 # Device API protocol (phone ↔ laptop)
 
-HTTPS on port **8765**, all routes under `/v1`. Implementation: `server/src/deviceApi.js`, `server/src/http.js`. Crypto for pairing: [pairing.md](pairing.md). File rules: [transfers.md](transfers.md). The loopback admin API and UDP discovery are documented when they are built (Plan 1B-ii-b).
+HTTPS on port **8765**, all routes under `/v1`. Implementation: `server/src/deviceApi.js`, `server/src/http.js`. Crypto for pairing: [pairing.md](pairing.md). File rules: [transfers.md](transfers.md). The loopback admin API and UDP discovery are at the end of this page.
 
 ## Conventions
 
@@ -117,3 +117,42 @@ The laptop remembers the last 200 operations (or 10 minutes) per device. `DELETE
 ## Limits at a glance
 
 JSON bodies 1 MB · text 1 MB · files 2 GiB · 10 failed auths/min/address · 5 pair requests/min/address · 3 open pairing requests · 20 paired devices · 2 event streams/device.
+
+---
+
+# Admin API (this laptop only)
+
+HTTP on `127.0.0.1:8760`, used by the admin page and the tray. Implementation: `server/src/adminApi.js`. **This is a browser cross-site defence, not authentication** (see [security.md](security.md)). Every request must:
+
+- come from a loopback address and have `Host: 127.0.0.1:<port>` or `localhost:<port>`
+- have no `Origin`, or `Origin: http://<host>`; no `Sec-Fetch-Site`, or `same-origin` / `none`
+- for anything other than GET/HEAD, carry `X-FlashPush-Admin: 1`
+
+Otherwise `403 FORBIDDEN`. Errors use the same envelope as the device API.
+
+| Route | Body / headers | Success | Errors |
+|---|---|---|---|
+| `GET /` | | the admin page (strict CSP, `X-Frame-Options: DENY`) | |
+| `GET /admin/ping` | | `{"app":"flashpush-admin","v":1}` (used to detect a running instance) | |
+| `GET /admin/state` | | `{laptop, addresses, ports, receiveDir, pending[], devices[] (+connected), items[] (+deviceId)}` | |
+| `GET /admin/events` | | SSE, event `changed` whenever `state` may have changed | |
+| `POST /admin/pair/:id/approve` | | `{}` | `PAIR_NOT_FOUND`, `PAIR_EXPIRED`, `PAIR_LIMIT` |
+| `POST /admin/pair/:id/deny` | | `{}` | `PAIR_NOT_FOUND`, `PAIR_EXPIRED` |
+| `DELETE /admin/devices/:id` | | `{}`; the phone's session ends at once | `BAD_REQUEST` (not a UUID), `NOT_FOUND` |
+| `POST /admin/text` | `{"text","deviceId"?}` | `201 <Item + deviceId>` | `BAD_REQUEST`, `PAYLOAD_TOO_LARGE` |
+| `POST /admin/file` | raw body; `Content-Length`, `X-Filename` (URL-encoded), `X-Device-Id`? | `201 <Item + deviceId>` (stored in the outbox) | `BAD_REQUEST`, `PAYLOAD_TOO_LARGE`, `STORAGE_QUOTA`, `INSUFFICIENT_STORAGE` |
+| `GET /admin/files/:id` | `?inline=1` (non-SVG images only) | the file | `ITEM_NOT_FOUND` |
+| `DELETE /admin/items/:id` | | `{}` (outbox files are deleted with the entry; received files stay) | |
+| `POST /admin/history/clear` | `{"deviceId"?}` | `{"removed":<n>}` | `BAD_REQUEST` |
+
+`deviceId` selects the target phone: optional when exactly one phone is paired, required when several are, and an error when none are.
+
+# UDP discovery
+
+UDP `8766`. A phone broadcasts `{"t":"FLASHPUSH_DISCOVER","v":1}` (under 512 bytes); each laptop answers that sender directly with
+
+```json
+{ "t": "FLASHPUSH_HERE", "v": 1, "laptopId": "<uuid>", "name": "MITHLESH-PC", "port": 8765 }
+```
+
+At most 20 probes per 10 seconds are answered per source address. The reply is a **hint only**: the phone must still verify the laptop through TLS pinning (and, on first contact, the pairing code).

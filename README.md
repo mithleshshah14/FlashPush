@@ -6,8 +6,9 @@ Send text, links and files between your Android phone and your Windows laptop, o
 
 | Part | State |
 |---|---|
-| v1 prototype (shared token + QR code, plain HTTP) | working, being replaced |
-| v2 (device pairing, approval on the laptop, HTTPS, tray + autostart, Tailscale) | design written, implementation not started |
+| v1 prototype (shared token + QR code, plain HTTP) | server part removed; the old Android app is being replaced |
+| v2 server (pairing, approval, HTTPS, per-phone history, transfers, discovery, admin API) | **built and tested** (169 tests) |
+| v2 Android app, Stitch-designed laptop UI, Windows tray + autostart, Tailscale support | designed; being built |
 
 v2 is designed in [`docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md`](docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md).
 
@@ -31,9 +32,9 @@ FlashPush/
   CHANGELOG.md  what changed, day by day
 ```
 
-## Try the v1 prototype
+## Run the laptop side (v2 server)
 
-Laptop (Node.js 18+):
+Node.js 22 or newer:
 
 ```
 cd server
@@ -41,9 +42,9 @@ npm install
 npm start
 ```
 
-Open http://localhost:8765, then on the phone (`cd app && flutter run`, USB debugging on) tap **Scan QR code**. Allow Node.js through Windows Firewall on **Private networks** when prompted.
+Open the address it prints (`http://127.0.0.1:8760`, this laptop only) to approve phones, send text and files, and manage devices. Allow Node.js through Windows Firewall on **Private networks** when asked. Details: [`server/README.md`](server/README.md). Tests: `cd server && npm test`.
 
-Files from the phone are saved to `Downloads/FlashPush`.
+The Android app in `app/` is still the v1 prototype and does not work with the v2 server until its plan lands; see [`docs/superpowers/plans/2026-09-21-v2-plan-index.md`](docs/superpowers/plans/2026-09-21-v2-plan-index.md).
 
 ## Documentation
 

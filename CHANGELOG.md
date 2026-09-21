@@ -38,6 +38,12 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - Server suite is now **149 tests, all passing**, including 25 that drive the API over real HTTP.
 - `docs/protocol.md`: every route, auth scheme, error code, idempotency rule and limit.
 
+### Built (Plan 1B-ii-b)
+- `adminApi.js`: loopback admin API (state, events, approve/deny, revoke, send text/file to a phone, history, files) with a browser cross-site guard; `index.js`: `createApp()` wires the HTTPS device API, admin API and UDP discovery, with clean start/stop and port-in-use reporting; a temporary admin page (`server/public/admin.html`).
+- The v1 `server.js`, its web page and the `qrcode` dependency are removed.
+- **End-to-end test over real TLS** (pair with matching codes, phone and laptop text and files, disconnect/reconnect, revoke, phone isolation, admin guard, UDP discovery, restart keeps certificate and pairing, clean stop, port in use). Server suite: **169 tests, all passing**.
+- Docs: `architecture.md`, `security.md`, admin API and discovery in `protocol.md`, `server/README.md`, updated root README.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

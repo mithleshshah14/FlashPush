@@ -122,3 +122,16 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 |---|---|---|
 | Header icons | drawn as buttons; the connection icon **is** the connect/disconnect control; no status text next to them | requested; one control instead of icon + text + button |
 | Working mode | run the remaining plans as a pipeline without asking between steps; report when done so the user can test | requested; guardrails: security, clean code, documentation |
+
+## Plan 1B-ii-b — admin API and wiring
+
+| Decision | Choice | Why |
+|---|---|---|
+| Admin guard | loopback address + `Host` + `Origin` + `Sec-Fetch-Site` + custom header on writes | blocks cross-site requests and DNS rebinding from web pages; explicitly not authentication (documented) |
+| Admin page CSP | inline scripts allowed only because the temporary page is one inline file | the Stitch-designed UI (Plan 4) will ship external scripts and drop it |
+| Temporary page | plain HTML, DOM built with `textContent` only | usable now without an XSS surface; replaced later |
+| `createApp()` | returns `start()` / `stop()`, all ports configurable (0 in tests) | end-to-end tests run the real server on ephemeral ports in about 50 ms |
+| Listen failure | stop what started, rethrow, name the port on `EADDRINUSE` | a half-started server is worse than none; Plan 5 turns this into the tray degraded state |
+| Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
+| Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
+| v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |
