@@ -70,6 +70,15 @@ async function main() {
     fs.writeFileSync(file, content);
     return { path: file, size: fs.statSync(file).size };
   };
+  // A short conversation over two days (newest at the bottom of the chat); times are set after adding.
+  const say = (from, text, minutesAgo) => {
+    store.add({ deviceId: pixel, kind: 'text', from, text });
+    store.items[store.items.length - 1].time = Date.now() - minutesAgo * MINUTE;
+  };
+  say('phone', 'Hey, are you at your desk?', 26 * 60);
+  say('laptop', 'Yes, what do you need?', 26 * 60 - 1);
+  say('phone', 'Can you send me the Q3 report?', 25 * 60);
+  say('laptop', 'Sent it to your phone. Check Files.', 25 * 60 - 3);
   store.add({ deviceId: pixel, kind: 'text', from: 'phone', text: 'https://docs.example.com/q3-report' });
   store.add({ deviceId: pixel, kind: 'file', from: 'laptop', name: 'invoice-september.pdf', ...write(outboxDir, 'invoice-september.pdf', Buffer.alloc(2.4 * 1024 * 1024, 1)) });
   store.add({ deviceId: pixel, kind: 'file', from: 'phone', name: 'IMG_2043.png', ...write(receiveDir, 'IMG_2043.png', fs.readFileSync(path.join(PUBLIC, 'assets', 'favicon.png'))) });

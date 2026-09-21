@@ -1,16 +1,17 @@
 # Admin UI (laptop web page)
 
-The page you use on the laptop to approve phones, send text and files, and manage devices. Served by the loopback admin server at `http://127.0.0.1:8760`. Designs: [`docs/design/README.md`](design/README.md) (Stitch, project "FlashPush v2"); screenshots of what was built: [`design/implemented/`](design/implemented/). Plan: [`superpowers/plans/2026-09-22-plan-4-laptop-ui.md`](superpowers/plans/2026-09-22-plan-4-laptop-ui.md).
+The page you use on the laptop to chat with a phone, send files, approve phones and manage devices. Served by the loopback admin server at `http://127.0.0.1:8760`. Designs: [`docs/design/README.md`](design/README.md) (Stitch, project "FlashPush v2"); screenshots of what was built: [`design/implemented/`](design/implemented/). Plan: [`superpowers/plans/2026-09-22-plan-4-laptop-ui.md`](superpowers/plans/2026-09-22-plan-4-laptop-ui.md).
 
 ## Views
 
 | View | Route | What it shows |
 |---|---|---|
-| **Dashboard** | `#/dashboard` | status pill (and the reason when the server reports `degraded`), the addresses your phone can reach with route chips and Copy, listening port; **Send to phone** (target selector when several phones are paired, text box, file drop zone with per-file progress); **Shared items** (From/To chip, link/text/file/image thumbnail, Copy, Download, Delete, Clear history with confirmation); collapsible **Can't connect from your phone?** with the firewall command and the exact ports and ranges it opens |
+| **Dashboard** | `#/dashboard` | status pill (and the reason when the server reports `degraded`), the addresses your phone can reach with route chips and Copy, listening port; **Send to phone** (target selector when several phones are paired, file drop zone with per-file progress, an *Open Messages* link); **Files and images** (From/To chip, image thumbnail or file icon, Download, Delete, Clear history with confirmation; text messages are not listed here); collapsible **Can't connect from your phone?** with the firewall command and the exact ports and ranges it opens |
+| **Messages** | `#/messages` | a **chat** with one phone at a time (see below) |
 | **Approvals** | `#/approvals` | one card per pending request: phone name, IP, route chip, `Re-pair of <name>` badge, the big 6-digit code, a live expiry countdown, **Approve** / **Deny** |
 | **Devices** | `#/devices` | paired phones: last seen, route, connected status (filled dot = connected, ring = not), **Revoke** with confirmation |
 
-Navigation is hash based, so back/forward and bookmarks work. The sidebar badge and the page title show the number of pending requests, for example `(2) Approvals · FlashPush`.
+Navigation is hash based, so back/forward and bookmarks work, and every view can be opened directly: the tray opens `#/messages` for a new message, `#/dashboard` for a new file or image and `#/approvals` for a pairing request. The sidebar badges (Approvals, Messages) and the page title show what is waiting: pending requests plus unread messages, for example `(3) Messages · FlashPush`.
 
 ## How it talks to the server
 
@@ -22,7 +23,7 @@ All requests go to the same origin (`connect-src 'self'`).
 | Live updates | `EventSource('/admin/events')`; a `changed` event triggers a refetch of the state; there is no replay, every (re)connect refetches |
 | Approve / deny | `POST /admin/pair/:id/approve` and `/deny` |
 | Revoke | `DELETE /admin/devices/:id` |
-| Send text | `POST /admin/text` |
+| Send a message (Messages view) | `POST /admin/text` with the selected phone's `deviceId` |
 | Send a file | `POST /admin/file` through `XMLHttpRequest` (for upload progress) with `X-Filename` (URL-encoded) and `X-Device-Id` |
 | Files | `GET /admin/files/:id` (download) and `?inline=1` for image thumbnails (never SVG) |
 | Delete / clear | `DELETE /admin/items/:id`, `POST /admin/history/clear` |
@@ -31,6 +32,19 @@ Every non-GET request carries `X-FlashPush-Admin: 1` (see [protocol.md](protocol
 
 **Offline behaviour:** if the event stream or a refetch fails, a banner reads "Can't reach FlashPush on this laptop. Trying again..." and the browser reconnects by itself (or the page reopens the stream after a few seconds if the browser gave up). When the server is back the banner disappears and the state refreshes.
 
+## Messages (chat)
+
+Text messages have their own view and look like a conversation. Files and images stay on the Dashboard.
+
+- **One conversation per phone.** With one paired phone the conversation opens directly; with several, a picker at the top chooses the phone (messages you send go to the phone whose conversation is open).
+- **Bubbles:** messages from the phone on the left with its initial and name (shown once per run of consecutive messages), messages from the laptop on the right; a time under every bubble; day separators (Today, Yesterday, or the date).
+- **Links:** `http(s)` URLs inside a message become links that open in a new tab with `rel="noopener noreferrer"`; anything else (`javascript:`, `data:`, plain words) stays text. A **copy** button appears on hover or keyboard focus (always visible on touch screens).
+- **Scrolling:** the newest message is at the bottom and the thread follows it while you are at the bottom; if you scrolled up to read, a **New messages** pill appears instead of jumping.
+- **Compose bar** pinned at the bottom: **Enter sends, Shift+Enter is a new line**, the box grows up to six lines, Send is disabled while the box is empty, "Sending..." shows while a message is on its way, a failure appears inline and keeps your text, and the cursor stays in the box.
+- **Empty states:** "No messages yet. Say hello!" and, with no phone, "Pair a phone first".
+- **Unread badge:** the Messages item in the sidebar and the page title count phone messages that arrived while another view was open. The "read up to" marker lives **in memory only**: history that exists when the page loads counts as read, opening Messages reads everything, and reloading the page starts fresh. New incoming messages are announced through the live region.
+- Live updates use the same `changed` event as everything else; new bubbles are appended without redrawing the thread (so screen readers announce only the new message), and the thread is rebuilt only when something was removed or the phone changed.
+
 ## Theme
 
 Dark by default; light follows `prefers-color-scheme` when the browser asks for it, and the sun/moon button in the sidebar switches manually. The choice is remembered in `localStorage` (every access is wrapped in `try/catch`, the page works without storage). Colours, radii and type come from `.stitch/DESIGN.md`; the CSS custom properties are at the top of `assets/app.css`.
@@ -38,7 +52,8 @@ Dark by default; light follows `prefers-color-scheme` when the browser asks for 
 ## Accessibility
 
 - Landmarks (`nav`, `main`), a skip link, real buttons and links, a visible focus ring, `aria-current="page"` on the active item.
-- New pairing requests are announced through an `aria-live="polite"` region ("Pixel 7 wants to connect. Code 482 916."); errors use `role="alert"`.
+- The chat thread is a `role="log"` region (`aria-live="polite"`, additions only); each bubble carries a hidden "You:" / "<phone>:" prefix so a screen reader says who wrote it; the compose box and Send button have labels.
+- New pairing requests and new incoming messages are announced through an `aria-live="polite"` region ("Pixel 7 wants to connect. Code 482 916."); errors use `role="alert"`.
 - Confirmations use the native `<dialog>` (focus is trapped, Escape cancels, focus returns to the opener).
 - State is never colour only: connection uses a filled dot versus a ring plus words; route chips carry text.
 - `prefers-reduced-motion` disables transitions. Text contrast meets AA in both themes (the light theme uses white text on `#0346F4` for primary buttons).
@@ -50,7 +65,7 @@ The page is served with `default-src 'self'; script-src 'self'; style-src 'self'
 
 - no inline `<script>`, `<style>`, `style=""` or `on...=` attributes; style through classes, `hidden`, `<progress>`;
 - **never** `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`: build nodes with `h()` (`assets/dom.js`) and `textContent`;
-- links only for `http:`/`https:` URLs (`safeUrl`) with `rel="noopener noreferrer"`;
+- links only for `http:`/`https:` URLs (`safeUrl`, and `safeLinkParts` for URLs inside a message) with `rel="noopener noreferrer"`;
 - no CDN, external font or external request.
 
 `server/test/ui-sources.test.js` enforces these rules on every `npm test`. Static files are served from an in-memory allowlist (`server/src/static.js`): only `index.html` at `/` and files under `server/public/assets/` with a known extension; nothing else is reachable, whatever the URL looks like.
@@ -61,10 +76,10 @@ The page is served with `default-src 'self'; script-src 'self'; style-src 'self'
 |---|---|
 | `server/public/index.html` | static page frame |
 | `assets/app.js` | wiring: routes, state, live updates, theme |
-| `assets/model.js` | pure helpers (formatting, view models); unit-tested |
+| `assets/model.js` | pure helpers (formatting, view models, chat grouping, unread marker, safe links, composer rules); unit-tested (`ui-model`, `ui-chat-model`) |
 | `assets/api.js`, `live.js`, `theme.js` | network, event stream, theme persistence; unit-tested with stubs |
 | `assets/dom.js`, `shell.js`, `widgets.js` | DOM helper and icons, page frame updates, shared widgets |
-| `assets/views/dashboard.js`, `approvals.js`, `devices.js` | one view each: `createView(ctx) -> { el, update(state, now), tick?(now) }` |
+| `assets/views/dashboard.js`, `messages.js`, `approvals.js`, `devices.js` | one view each: `createView(ctx) -> { el, update(state, now), tick?(now) }` |
 | `assets/app.css` | tokens, layout, components, both themes |
 | `assets/favicon.png` | made from `app_icon.png` by `scripts/make-favicon.ps1` (transparent rounded corners) |
 
@@ -78,7 +93,7 @@ node test/tools/demo-server.js 8761          # binds 127.0.0.1 only; mounts only
 node test/tools/screenshots.js 8761 ../docs/design/implemented
 ```
 
-The demo opens **no** phone-facing listener and no UDP socket. The screenshot tool starts its own headless Chrome with a throw-away profile and stops it afterwards (set `CHROME_PATH` if Chrome is elsewhere). It emulates dark and light, 1440x900 and 390x844, reports console errors and horizontal overflow.
+The demo data includes a two-day conversation with one phone, so the Messages view has something to show (`#/messages`). The demo opens **no** phone-facing listener and no UDP socket. The screenshot tool starts its own headless Chrome with a throw-away profile and stops it afterwards (set `CHROME_PATH` if Chrome is elsewhere). It emulates dark and light, 1440x900 and 390x844, reports console errors and horizontal overflow.
 
 ## Known differences from the Stitch designs
 
@@ -87,3 +102,7 @@ The demo opens **no** phone-facing listener and no UDP socket. The screenshot to
 - The Stitch light Devices screen renders a dark content area next to a light sidebar; the built light theme is light throughout.
 - The sidebar logo is the app icon itself (`favicon.png`) instead of the line glyph in the mock-ups.
 - The status pill sits in the sidebar on Approvals and Devices and in the page header on the Dashboard, as in the designs.
+
+## Tests for the chat
+
+`server/test/ui-chat-model.test.js` covers the pure logic (grouping and runs, day labels, unread marker, link safety, composer keys). `server/test/ui-messages.test.js` drives the real `views/messages.js` against a tiny fake DOM (`server/test/helpers/fake-dom.js`, no dependencies): rendering and sides, links, append versus rebuild, the New messages pill, sending (Enter, Shift+Enter, blank, failure) and the phone picker. The chat has not been shown in Stitch (see `docs/design/README.md`).

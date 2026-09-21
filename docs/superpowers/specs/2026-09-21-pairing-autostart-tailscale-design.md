@@ -345,6 +345,8 @@ The supplied `app_icon.png` (repo root, 1254×1254 RGB, no transparency) shows a
 
 Views: **Dashboard** (status + degraded reason, addresses and routes, send text/files to the phone, shared items feed, Clear history, the "Can't connect from your phone?" panel), **Approvals** (pending cards with code, requester name/IP/route, Approve/Deny, "Re-pair of …" label), **Devices** (paired phones with last seen, route, connected dot, Revoke). The QR/link is removed. Same visual language as the app.
 
+**Messages (chat).** Text messages have their own **Messages** view (`#/messages`) that looks like a conversation: one thread per phone (a picker when several are paired), the phone's messages on the left and the laptop's on the right, day separators, a time under each bubble, safe clickable links, and a compose bar pinned at the bottom (Enter sends, Shift+Enter is a new line). The sidebar item carries an unread badge for phone messages that arrived while another view was open (kept in memory only). The Dashboard's shared list therefore shows only files and images. Views can be opened directly by hash (`#/messages`, `#/dashboard`, `#/approvals`) so the tray notification can land on the right one.
+
 ## 11. Protocol summary (full detail per endpoint in `docs/protocol.md`, exact crypto in `docs/pairing.md`)
 
 Every endpoint in `protocol.md` is documented with: method, path, auth, request body, response body, status codes, error codes, idempotency, max body size, and retry guidance.

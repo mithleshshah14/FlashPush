@@ -105,6 +105,11 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed (design feedback, phone)
 - The center button on the laptop screen now sends for the tab you are on: **Messages** opens the text box, **Images** the gallery, **Files** the file explorer, with no "New transfer" chooser step (spec section 9, decisions log). The chooser sheet is removed. Tests updated.
 
+### Added (laptop chat view)
+- **Messages** on the laptop web UI is now a separate, chat-style view (`#/messages`): one conversation per phone, bubbles (phone left, laptop right), day separators, grouped runs, safe clickable links, copy on hover, a "New messages" pill when you scrolled up, and a compose bar pinned at the bottom (Enter sends, Shift+Enter newline). An in-memory **unread badge** on the Messages nav item and in the page title.
+- The Dashboard feed is now **Files and images** only; its text box moved into Messages (an "Open Messages" link stays). Deep links `#/messages`, `#/dashboard`, `#/approvals` work when opened directly (for the tray).
+- Tests: `ui-chat-model.test.js`, `ui-messages.test.js` (fake DOM helper). Demo data has a two-day conversation; the screenshot tool includes Messages.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

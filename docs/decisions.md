@@ -224,3 +224,16 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Type chooser sheet | removed (supersedes the earlier "New transfer asks the type first" decision) | it became dead code; one tap now does the job |
 | Button position | bottom center | requested ("click on center") |
 | Stitch designs | the "New transfer: choose type" sheet screens are superseded by this behaviour; the per-tab button is not yet drawn in Stitch | the app and spec are the source of truth until the designs are refreshed |
+
+## 2026-09-22 — laptop chat view (user feedback)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Messages on the laptop | a separate **Messages** view that looks like a chat | requested: "it should look like I am having a chat" |
+| Chat content | **text only**, one conversation per phone (picker when several are paired) | files and images already have their own list; a chat with mixed attachments would need new design work |
+| Dashboard feed | now **Files and images** only; the text box moved to Messages (an "Open Messages" link remains) | text lives in one place, so nothing appears twice |
+| Unread badge | counts phone messages that arrived while another view was open; the marker lives **in memory only** | no new storage or server state; existing history is read on load, and a reload starts fresh (documented limit) |
+| Deep links | `#/messages` (new message), `#/dashboard` (file or image), `#/approvals` (pairing) open directly | the tray notification opens the right place |
+| Rendering | new bubbles are appended, the thread is rebuilt only on removal or phone change | screen readers announce only the new message, and the scroll position is kept |
+| View tests | a small fake DOM (`fake-dom.js`) instead of a browser or jsdom | no new dependency and no browser launch (see `docs/dev-safety.md`) |
+| Design | built from the existing tokens; no Stitch screen yet (prompt in `docs/design/README.md`) | Stitch access is rate limited; the behaviour was the request |
