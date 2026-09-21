@@ -31,6 +31,15 @@ Uint8List sha256(List<int> bytes) => Uint8List.fromList(c.sha256.convert(bytes).
 
 Uint8List randomBytes(int n) => Uint8List.fromList(List.generate(n, (_) => _random.nextInt(256)));
 
+/// A random (version 4) UUID in the lowercase form the laptop validates.
+String newUuid() {
+  final b = randomBytes(16);
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  final h = b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
+  return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
+}
+
 void _requireLength(Uint8List bytes, int length, String name) {
   if (bytes.length != length) throw ArgumentError('$name must be $length bytes');
 }

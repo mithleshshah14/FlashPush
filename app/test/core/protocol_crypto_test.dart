@@ -62,6 +62,12 @@ void main() {
     expect(constantTimeEquals(np, Uint8List(15)), isFalse);
   });
 
+  test('newUuid is a lowercase version 4 UUID and differs each time', () {
+    final id = newUuid();
+    expect(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$').hasMatch(id), isTrue);
+    expect(newUuid(), isNot(id));
+  });
+
   test('randomBytes returns fresh bytes of the requested size', () {
     expect(randomBytes(16).length, 16);
     expect(randomBytes(16), isNot(randomBytes(16)));
