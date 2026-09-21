@@ -120,6 +120,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - **"Paired" was shown next to a grey (not connected) link icon.** A paired laptop now shows only its two icons; words remain only for "Not paired" and "Identity changed" (spec section 9, decisions log).
 - **No tray icon and no balloon for a photo sent from the phone:** the server that was running was a headless copy (no tray by design). Troubleshooting for "no tray icon" (headless, already running, hidden icons, antivirus, site open) added to `docs/setup.md`; the quickstart says the tray mode is `npm start`.
 
+### Pushed
+- All of the above was pushed to GitHub on `feature/v2-pairing-autostart-tailscale` (fast-forward, no force). `main` and `develop` on GitHub are unchanged. Laptop-side changes are planned for the next working day.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).
