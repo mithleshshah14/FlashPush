@@ -17,7 +17,7 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - Brand palette sampled from the icon; derived icon assets planned.
 
 ### Changed
-- Repository set up on `main` with a README as the first commit; `develop` created from `main`; work continues on `feature/v2-pairing-autostart-tailscale` (branching rules recorded in `docs/decisions.md`).
+- Repository set up on `main` with a README as the first commit; `develop` created from `main`; work continues on `feature/v2-pairing-autostart-tailscale` (branching rules recorded in `docs/decisions.md`). All three branches pushed to `origin` (remote was empty; no force push).
 
 ### Verified
 - Server API exercised with curl: token check (401), text and file upload, path-traversal filename sanitizing, download, loopback web UI.
