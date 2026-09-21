@@ -2,14 +2,15 @@
 import { getState, send, uploadFile } from './api.js';
 import { confirmDialog, copyText } from './dom.js';
 import { startLive } from './live.js';
-import { newPendingIds, parseRoute } from './model.js';
+import { newPendingIds, nextLastSeen, parseRoute, unreadCount } from './model.js';
 import { createShell } from './shell.js';
 import { createApprovals } from './views/approvals.js';
 import { createDashboard } from './views/dashboard.js';
 import { createDevices } from './views/devices.js';
+import { createMessages } from './views/messages.js';
 import { applyTheme, readTheme, resolveTheme, saveTheme } from './theme.js';
 
-const views = { dashboard: createDashboard, approvals: createApprovals, devices: createDevices };
+const views = { dashboard: createDashboard, messages: createMessages, approvals: createApprovals, devices: createDevices };
 
 const shell = createShell();
 const root = document.documentElement;
@@ -40,6 +41,17 @@ let state = null;
 let current = null;
 let currentName = null;
 let seenPending = new Set();
+let lastSeen = null; // in memory only: phone messages newer than this are unread (null until the first load)
+let unread = 0;
+
+/** Moves the read marker (everything is read while Messages is open) and shows how many messages are unread. */
+function refreshUnread() {
+  lastSeen = nextLastSeen(state.items, lastSeen, currentName === 'messages');
+  const count = unreadCount(state.items, lastSeen);
+  if (count > unread) shell.announce(count === 1 ? 'New message from a phone.' : `${count} unread messages.`);
+  unread = count;
+  shell.setUnread(count);
+}
 
 async function refresh() {
   try {
@@ -64,6 +76,7 @@ function applyState(next) {
     }
   }
   seenPending = new Set(next.pending.map((p) => p.requestId));
+  refreshUnread();
   if (current) current.update(state, Date.now());
 }
 
@@ -76,7 +89,10 @@ function route() {
   shell.main.replaceChildren(current.el);
   shell.setView(name);
   if (changing) shell.focusMain();
-  if (state) current.update(state, Date.now());
+  if (state) {
+    refreshUnread();
+    current.update(state, Date.now());
+  }
 }
 
 window.addEventListener('hashchange', route);

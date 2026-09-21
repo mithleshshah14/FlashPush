@@ -6,12 +6,12 @@ import { documentTitle, statusInfo } from './model.js';
 export function createShell(doc = document) {
   const $ = (id) => doc.getElementById(id);
   const links = [...doc.querySelectorAll('.nav-link')];
-  const state = { view: 'dashboard', pending: 0 };
+  const state = { view: 'dashboard', pending: 0, unread: 0 };
 
   for (const slot of doc.querySelectorAll('[data-icon]')) slot.replaceChildren(icon(slot.dataset.icon, 20));
 
   function refreshTitle() {
-    doc.title = documentTitle(state.view, state.pending);
+    doc.title = documentTitle(state.view, state.pending, state.unread);
   }
 
   return {
@@ -33,6 +33,16 @@ export function createShell(doc = document) {
       badge.hidden = count === 0;
       badge.textContent = String(count);
       badge.setAttribute('aria-label', `${count} pending`);
+      refreshTitle();
+    },
+
+    /** The number of unread messages from phones (shown on the Messages nav item and in the tab title). */
+    setUnread(count) {
+      state.unread = count;
+      const badge = $('messages-badge');
+      badge.hidden = count === 0;
+      badge.textContent = String(count);
+      badge.setAttribute('aria-label', `${count} unread`);
       refreshTitle();
     },
 
