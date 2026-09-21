@@ -116,7 +116,7 @@ A code taken from the fingerprint alone can be ground offline by a man-in-the-mi
 
 **Re-pair:** pairing again with an existing `deviceId` (phone menu "Re-pair", or after credentials were lost) goes through the same approval. On approval the device record's secret is **replaced**: the old secret stops working immediately and its session is ended. The approval card says "Re-pair of *Pixel 7*".
 
-**Limits:** pairing request expires after **2 minutes**; max **3 pending**; max **5 pair requests/minute/IP**; max **20 approved devices**. The approval card shows the requester's route (Wi-Fi vs Tailscale) and IP.
+**Limits:** the phone must send its reveal within **10 seconds** of the request or the request expires (an unrevealed request could otherwise hold one of the 3 pending slots for 2 minutes and let anyone on the Wi-Fi block pairing); a revealed request expires after **2 minutes**; max **3 pending**; max **5 pair requests/minute/IP**; max **20 approved devices**. The approval card shows the requester's route (Wi-Fi vs Tailscale) and IP.
 
 ### 3.3 Sessions: Connect / Disconnect
 

@@ -16,7 +16,12 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - Spec revision 2 incorporates an external design review (`docs/FlashPush_v2_design_review_suggestions.md`): pairing proof and exact encodings, one session per device with expiry, re-pair, file limits and path safety, error envelope, idempotency, reconnect rules, retention. Deferrals and reasons are in `docs/decisions.md`.
 - Brand palette sampled from the icon; derived icon assets planned.
 
+### Planned
+- Spec revision 2 **approved**.
+- Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).
+
 ### Changed
+- Spec §3.2: an unrevealed pairing request now expires after **10 s** (was covered only by the 2 min limit), so anyone on the Wi-Fi cannot fill the 3 pending slots and block pairing.
 - Repository set up on `main` with a README as the first commit; `develop` created from `main`; work continues on `feature/v2-pairing-autostart-tailscale` (branching rules recorded in `docs/decisions.md`). All three branches pushed to `origin` (remote was empty; no force push).
 
 ### Verified
