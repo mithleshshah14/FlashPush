@@ -5,7 +5,6 @@ const { apiError } = require('./errors');
 const { createLimiter } = require('./ratelimit');
 const { classifyIp } = require('./addresses');
 const { saveUpload } = require('./transfers');
-const { isImage } = require('./mime');
 const web = require('./http');
 
 const OPERATION_ID = /^[\w-]{8,64}$/;
@@ -192,15 +191,7 @@ function createDeviceApi({ identity, devices, sessions, pairing, store, ops, lim
     const { deviceId } = requireSession(req);
     const item = store.get(params.id);
     if (!item || item.deviceId !== deviceId || item.kind !== 'file' || !fs.existsSync(item.path)) throw apiError('ITEM_NOT_FOUND');
-    const inline = url.searchParams.get('inline') === '1' && isImage(item.mime) && item.mime !== 'image/svg+xml';
-    res.writeHead(200, {
-      'Content-Type': item.mime,
-      'Content-Length': fs.statSync(item.path).size,
-      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(item.name)}`,
-      'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'no-store',
-    });
-    fs.createReadStream(item.path).on('error', () => res.destroy()).pipe(res);
+    web.streamFile(res, item, web.canInline(item.mime, url.searchParams.get('inline') === '1'));
   }
 
   function deleteItem(req, res, { params }) {

@@ -102,3 +102,10 @@ test('the router matches method and path, fills params, and returns null otherwi
   assert.equal(route('POST', '/v1/items'), null);
   assert.equal(route('GET', '/v1/nope'), null);
 });
+
+test('canInline allows only wanted, non-SVG images', () => {
+  assert.equal(web.canInline('image/png', true), true);
+  assert.equal(web.canInline('image/png', false), false);
+  assert.equal(web.canInline('image/svg+xml', true), false);
+  assert.equal(web.canInline('application/pdf', true), false);
+});

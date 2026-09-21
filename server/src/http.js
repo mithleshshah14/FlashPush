@@ -1,6 +1,8 @@
 'use strict';
 
+const fs = require('node:fs');
 const { apiError, envelope, ApiError } = require('./errors');
+const { isImage } = require('./mime');
 
 function sendJson(res, status, body, headers = {}) {
   const data = JSON.stringify(body);
@@ -100,4 +102,18 @@ function openSse(req, res, { heartbeatMs = 25_000 } = {}) {
   };
 }
 
-module.exports = { sendJson, sendError, readJson, remoteAddress, headerValue, bearerToken, deviceCredentials, createRouter, openSse };
+/** Inline display is allowed only for raster images: an SVG can carry script. */
+const canInline = (mime, wanted) => Boolean(wanted) && isImage(mime) && mime !== 'image/svg+xml';
+
+function streamFile(res, { path: filePath, name, mime }, inline) {
+  res.writeHead(200, {
+    'Content-Type': mime,
+    'Content-Length': fs.statSync(filePath).size,
+    'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(name)}`,
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-store',
+  });
+  fs.createReadStream(filePath).on('error', () => res.destroy()).pipe(res);
+}
+
+module.exports = { sendJson, sendError, readJson, remoteAddress, headerValue, bearerToken, deviceCredentials, createRouter, openSse, canInline, streamFile };
