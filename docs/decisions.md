@@ -93,3 +93,12 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Discovery replies | rate limited to 20 per 10 s per source address | a UDP responder must not be usable as an amplifier or a flood target |
 | Received files vs history | pruning or deleting a history entry never deletes a file in Downloads | the user's own files must not disappear because a list got trimmed |
 | Item ownership | entries carry `deviceId` and are filtered per phone | several paired phones must not read each other's messages |
+
+## 2026-09-22 — Stitch review feedback
+
+| Decision | Choice | Why |
+|---|---|---|
+| Mobile connection status | two icons: **Wi-Fi** (green = reaches the laptop over local Wi-Fi) and **connection/link** (green = connected, grey = not); no Connected/Disconnected words | requested; compact header |
+| Tailscale route | Wi-Fi icon grey, link icon green, subtitle "via Tailscale" | the user asked for two icons only; the route stays visible without a third icon (assumption, easy to change) |
+| Accessibility | different icon shapes plus accessible labels | colour must not be the only signal |
+| Laptop UI | approved as designed; keep both dark and light modes | requested |

@@ -30,6 +30,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - `addresses.js` (lan / tailscale / other, link-local dropped), `mime.js`, `store.js` (per-phone history, retention, outbox cleanup), `transfers.js` (sanitized names, `.part` files, size / quota / disk checks, interrupted-upload cleanup), `discovery.js` (UDP responder, rate limited). Test-first; the whole server suite is now **113 tests, all passing**.
 - `docs/transfers.md`.
 
+### Changed (design feedback)
+- Mobile header shows two status icons (Wi-Fi green/grey, connection green/grey) instead of "Connected/Disconnected" text (spec §9). Laptop screens approved; dark and light modes kept.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

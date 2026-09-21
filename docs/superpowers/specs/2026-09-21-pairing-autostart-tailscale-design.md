@@ -304,8 +304,17 @@ Screens (designed in Stitch first, saved in `docs/design/`):
 
 The app has **bottom navigation with three tabs: Devices, Transfer, Settings.**
 
+**Connection status is shown with two icons, never with the words Connected/Disconnected:**
+
+| Icon | Green | Grey |
+|---|---|---|
+| Wi-Fi | the phone reaches the laptop over the local Wi-Fi | not on the laptop's local network |
+| Connection (link) | connected to the laptop (active session) | not connected |
+
+Over Tailscale the Wi-Fi icon stays grey, the connection icon is green and the laptop detail subtitle reads "via Tailscale". Icons differ in shape and carry accessible labels, so state is never colour alone.
+
 1. **Devices (laptops list):** discovered + saved laptops, each row with name, route, status and a **Connect / Disconnect** button; "Can't find your laptop? Add by address"; pull-to-refresh rescans. **Tapping a laptop row opens its detail screen** (item 2); the Connect button on the row only connects/disconnects.
-2. **Laptop detail** (a screen of its own, opened from the list): header with laptop name, route, status and Connect/Disconnect, then three **separate tabs**:
+2. **Laptop detail** (a screen of its own, opened from the list): header with the laptop name, the **two status icons** (below) and Connect/Disconnect, then three **separate tabs**:
    - **Messages:** previous text and links, both directions, newest last, with copy/open.
    - **Images:** a thumbnail grid of every image sent or received; tap for full view and Save.
    - **Files:** documents and other files with name, size, direction and Save/Open.
