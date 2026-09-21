@@ -73,3 +73,65 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Timing | injectable `now` | every expiry rule is tested with a fake clock, no sleeping |
 | State files | `%APPDATA%\FlashPush`, atomic JSON writes | survives crashes; independent of the launch directory |
 | Simplifications from the over-engineering review | see the "over-engineering review of Plan 1A" section of this file | fewer moving parts before anything is built |
+
+## 2026-09-21 — phone screens: laptop detail and new transfer
+
+| Decision | Choice | Why |
+|---|---|---|
+| Tapping a laptop | opens a **laptop detail** screen with separate **Messages / Images / Files** tabs and a **New transfer** button | requested: read previous messages, see sent images and files separately, start a transfer |
+| New transfer | bottom sheet asks the type first: **Image**, **Text**, **Document** | requested |
+| Bottom navigation | Devices, Transfer, Settings; the Transfer tab is a shortcut to the connected laptop's detail screen | keeps the earlier Transfer/Settings request without two screens doing the same job |
+| History offline | phone caches item metadata and image thumbnails per laptop | history must be readable while disconnected |
+| Items belong to one phone | every history entry has a `deviceId`; a phone sees only its own; files carry a `mime` type | several paired phones must not read each other's messages; `mime` lets the phone split Images from Files |
+
+## Plan 1B-i — server foundations
+
+| Decision | Choice | Why |
+|---|---|---|
+| Address classification | built in 1B-i (`addresses.js`), MagicDNS and the phone's address race stay in Plan 6 | the route (Wi-Fi vs Tailscale) is needed on the approval card at pairing time |
+| Upload part file | `<name>.<random>.part`; final name chosen synchronously just before the rename | two uploads of one name cannot collide or overwrite each other |
+| Discovery replies | rate limited to 20 per 10 s per source address | a UDP responder must not be usable as an amplifier or a flood target |
+| Received files vs history | pruning or deleting a history entry never deletes a file in Downloads | the user's own files must not disappear because a list got trimmed |
+| Item ownership | entries carry `deviceId` and are filtered per phone | several paired phones must not read each other's messages |
+
+## 2026-09-22 — Stitch review feedback
+
+| Decision | Choice | Why |
+|---|---|---|
+| Mobile connection status | two icons: **Wi-Fi** (green = reaches the laptop over local Wi-Fi) and **connection/link** (green = connected, grey = not); no Connected/Disconnected words | requested; compact header |
+| Tailscale route | Wi-Fi icon grey, link icon green, subtitle "via Tailscale" | the user asked for two icons only; the route stays visible without a third icon (assumption, easy to change) |
+| Accessibility | different icon shapes plus accessible labels | colour must not be the only signal |
+| Laptop UI | approved as designed; keep both dark and light modes | requested |
+
+## Plan 1B-ii-a — device API
+
+| Decision | Choice | Why |
+|---|---|---|
+| Shape | `createDeviceApi(deps) → { handler, closeAll }`, a plain request handler | tested over plain HTTP in milliseconds; mounted on HTTPS in Plan 1B-ii-b, where TLS is covered by the end-to-end test |
+| New error codes | `NOT_FOUND` (404), `FORBIDDEN` (403) | unknown routes and the admin guard need a code that is not a domain error |
+| `GET /v1/items` | returns `{ "items": [...] }` | leaves room for paging fields later without a breaking change |
+| Wrong secret vs unknown device | `UNAUTHORIZED` vs `DEVICE_NOT_PAIRED` | the phone only stops retrying and offers Re-pair when the laptop truly does not know it |
+| SVG | never served inline | an SVG can carry script; only raster images may be `inline` |
+| Duplicate in-flight transfer | `429` + `Retry-After: 1` | no promise plumbing; the phone retries and gets the stored result |
+| Session `start` event | added to `SessionStore` | the admin UI refreshes when a phone connects |
+| Test harness | real modules, plain HTTP, `fetch`, phone flow helper `pairDevice` | every route is exercised over the wire, not by calling functions |
+
+## 2026-09-22 — Stitch review, round 2 and working mode
+
+| Decision | Choice | Why |
+|---|---|---|
+| Header icons | drawn as buttons; the connection icon **is** the connect/disconnect control; no status text next to them | requested; one control instead of icon + text + button |
+| Working mode | run the remaining plans as a pipeline without asking between steps; report when done so the user can test | requested; guardrails: security, clean code, documentation |
+
+## Plan 1B-ii-b — admin API and wiring
+
+| Decision | Choice | Why |
+|---|---|---|
+| Admin guard | loopback address + `Host` + `Origin` + `Sec-Fetch-Site` + custom header on writes | blocks cross-site requests and DNS rebinding from web pages; explicitly not authentication (documented) |
+| Admin page CSP | inline scripts allowed only because the temporary page is one inline file | the Stitch-designed UI (Plan 4) will ship external scripts and drop it |
+| Temporary page | plain HTML, DOM built with `textContent` only | usable now without an XSS surface; replaced later |
+| `createApp()` | returns `start()` / `stop()`, all ports configurable (0 in tests) | end-to-end tests run the real server on ephemeral ports in about 50 ms |
+| Listen failure | stop what started, rethrow, name the port on `EADDRINUSE` | a half-started server is worse than none; Plan 5 turns this into the tray degraded state |
+| Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
+| Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
+| v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |

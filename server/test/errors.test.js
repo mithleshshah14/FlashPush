@@ -21,6 +21,8 @@ test('every code maps to the HTTP status in the spec', () => {
     STORAGE_QUOTA: 507,
     ITEM_NOT_FOUND: 404,
     INTERNAL: 500,
+    NOT_FOUND: 404,
+    FORBIDDEN: 403,
   };
   for (const [code, status] of Object.entries(expected)) assert.equal(apiError(code).status, status, code);
 });

@@ -22,6 +22,28 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - New dependency: `selfsigned`. The v1 `server.js` and web page are untouched until Plan 1B replaces them.
 - `docs/pairing.md` (exact protocol, timings, test vectors).
 
+### Changed (spec, phone screens)
+- Spec §9: bottom tabs Devices / Transfer / Settings; tapping a laptop opens a detail screen with separate Messages, Images and Files tabs and a New transfer sheet (Image / Text / Document); phone keeps a local history cache. Spec §7: items belong to one phone (`deviceId`) and files carry `mime`; §7.1 no longer claims limits are editable in `config.json`.
+- Requirements forwarded to the Stitch designer (screens: laptop detail x3 tabs, new-transfer sheet, compose, offline state, Transfer and Settings tabs, laptop UI).
+
+### Built (Plan 1B-i, branch `feature/server-api-transfers`)
+- `addresses.js` (lan / tailscale / other, link-local dropped), `mime.js`, `store.js` (per-phone history, retention, outbox cleanup), `transfers.js` (sanitized names, `.part` files, size / quota / disk checks, interrupted-upload cleanup), `discovery.js` (UDP responder, rate limited). Test-first; the whole server suite is now **113 tests, all passing**.
+- `docs/transfers.md`.
+
+### Changed (design feedback)
+- Mobile header shows two status icons (Wi-Fi green/grey, connection green/grey) instead of "Connected/Disconnected" text (spec §9). Laptop screens approved; dark and light modes kept.
+
+### Built (Plan 1B-ii-a)
+- `http.js` (JSON in/out, error envelope, router, SSE helper) and `deviceApi.js`: the whole phone-facing `/v1` API: hello, pairing (request / reveal / status with proof), sessions (connect, disconnect, forget), per-phone history, text and file upload with `X-Operation-Id` idempotency, downloads (inline only for non-SVG images), live events with the `expired` event, failed-auth rate limit. New error codes `NOT_FOUND` and `FORBIDDEN`; sessions emit `start`.
+- Server suite is now **149 tests, all passing**, including 25 that drive the API over real HTTP.
+- `docs/protocol.md`: every route, auth scheme, error code, idempotency rule and limit.
+
+### Built (Plan 1B-ii-b)
+- `adminApi.js`: loopback admin API (state, events, approve/deny, revoke, send text/file to a phone, history, files) with a browser cross-site guard; `index.js`: `createApp()` wires the HTTPS device API, admin API and UDP discovery, with clean start/stop and port-in-use reporting; a temporary admin page (`server/public/admin.html`).
+- The v1 `server.js`, its web page and the `qrcode` dependency are removed.
+- **End-to-end test over real TLS** (pair with matching codes, phone and laptop text and files, disconnect/reconnect, revoke, phone isolation, admin guard, UDP discovery, restart keeps certificate and pairing, clean stop, port in use). Server suite: **169 tests, all passing**.
+- Docs: `architecture.md`, `security.md`, admin API and discovery in `protocol.md`, `server/README.md`, updated root README.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

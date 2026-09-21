@@ -248,7 +248,7 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 
 ## 7. Files, storage and retention
 
-### 7.1 Limits (defaults, editable in `config.json`)
+### 7.1 Limits (constants in `config.js`)
 
 | Limit | Default |
 |---|---|
@@ -270,6 +270,8 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 - **Integrity:** TLS protects data in transit and the `Content-Length` check catches truncation. Per-file checksums, transfer IDs and resumable uploads are deferred (recorded in `docs/decisions.md`); the item model has room for an optional `sha256` later.
 
 ### 7.3 Retention
+
+- **Items belong to one phone.** Every history entry carries the `deviceId` of the phone it was sent by or to, and a phone only ever sees its own entries, so several paired phones do not read each other's messages. The laptop UI's send box targets one phone (the only one, or a chosen one). File entries also carry a `mime` type (derived from the extension) so the phone can separate Images from Files.
 
 - History is capped at 500 entries; pruning removes the oldest entry. Pruning a **received** file removes only the history entry, **never the file in the user's Downloads/FlashPush folder**. Pruning or deleting an **outbox** entry (laptop → phone) removes its file.
 - Deleting an item in the UI follows the same rule. The laptop UI has **Clear history** with the same rules.
@@ -300,10 +302,32 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 
 Screens (designed in Stitch first, saved in `docs/design/`):
 
-1. **Laptops:** discovered + saved laptops, each row with name, route, status and a **Connect / Disconnect** button; "Can't find your laptop? Add by address"; pull-to-refresh rescans.
-2. **Pairing:** shows the 6-digit code, "Check it matches the laptop, then approve there", cancel; states approved / denied / expired.
-3. **Transfer:** the current text/file screen, with the laptop name + route in the app bar. A revoked / cert-changed state replaces it with the message and the Re-pair / Forget action.
-4. **Menu:** Re-pair, Forget laptop.
+The app has **bottom navigation with three tabs: Devices, Transfer, Settings.**
+
+**Connection status is shown with two icons, never with the words Connected/Disconnected:**
+
+| Icon | Green | Grey |
+|---|---|---|
+| Wi-Fi | the phone reaches the laptop over the local Wi-Fi | not on the laptop's local network |
+| Connection (link) | connected to the laptop (active session) | not connected |
+
+**Both icons are drawn as buttons** (rounded, about 48 dp touch target). The connection icon is the action: tapping it connects (grey) or disconnects (green), so there is **no separate Connect/Disconnect button and no status text next to the icons**. The Wi-Fi icon is an indicator; tapping it shows the route.
+
+Over Tailscale the Wi-Fi icon stays grey, the connection icon is green and the laptop detail subtitle reads "via Tailscale". Icons differ in shape and carry accessible labels, so state is never colour alone.
+
+1. **Devices (laptops list):** discovered + saved laptops, each row with the laptop name and the two status icons (the connection icon is the connect/disconnect button); "Can't find your laptop? Add by address"; pull-to-refresh rescans. **Tapping a laptop row opens its detail screen** (item 2); the Connect button on the row only connects/disconnects.
+2. **Laptop detail** (a screen of its own, opened from the list): header with the laptop name and the **two status icons** (below), then three **separate tabs**:
+   - **Messages:** previous text and links, both directions, newest last, with copy/open.
+   - **Images:** a thumbnail grid of every image sent or received; tap for full view and Save.
+   - **Files:** documents and other files with name, size, direction and Save/Open.
+   A prominent **New transfer** button opens item 3.
+3. **New transfer:** a bottom sheet that first asks the **type**: **Image** (gallery or camera), **Text** (compose text or paste a link) or **Document** (any file). Then the pick/compose step, then progress. If the laptop is not connected it offers to connect first.
+4. **Pairing:** shows the 6-digit code, "Check it matches the laptop, then approve there", cancel; states approved / denied / expired.
+5. **Transfer tab:** a shortcut to the detail screen of the currently connected laptop, or "Connect a laptop first" with a button to the Devices tab.
+6. **Settings:** this phone's name, paired laptops (Re-pair, Forget), appearance (system / dark / light), connection (auto-reconnect, scan again), about.
+7. **Problem states:** "Not paired anymore" (Re-pair / Forget) and "Laptop identity changed" (Forget and pair again) replace the detail content.
+
+**History on the phone:** the phone keeps a per-laptop local cache of item metadata and image thumbnails, so Messages, Images and Files are readable while disconnected. Full files and full-size images are fetched from the laptop when connected (or are already on the phone if it sent or saved them).
 
 Implementation notes: `dart:io` `HttpClient` with a `badCertificateCallback` that compares the presented certificate's fingerprint to the pinned one (during first pairing it only records it); `flutter_secure_storage` for secret + fingerprint; `crypto` for SHA-256/HMAC. `usesCleartextTraffic` is removed (HTTPS only). Share-sheet sending works against the connected laptop; if not connected it asks to connect.
 
