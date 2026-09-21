@@ -40,10 +40,10 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 | Problem: not paired anymore (Re-pair / Forget) | dark | `518c615180084b249caf7e13176121b4` | `screens/android-not-paired-anymore.png` |
 | Problem: laptop identity changed | dark | `a5c9f90052ab41f9859e505354b10e80` | `screens/android-identity-changed.png` |
 | Laptop detail: Messages (connected), **icon buttons (v3)** | dark | `f22d86df4f0d4e32916d00290957f80b` | `screens/android-detail-messages.png` |
-| Laptop detail: Images (connected) | dark | `0c348cf5efc440a28e6891c701404a0d` | `screens/android-detail-images.png` |
+| Laptop detail: Images (connected), **icon buttons (v3)** | dark | `38a4331b2dc447c18608c5e6a41e0712` | `screens/android-detail-images.png` |
 | Laptop detail: Images, empty, **icon buttons (v3)** | dark | `432109ac80e747219cced4dbe150f295` | `screens/android-detail-images-empty.png` |
-| Laptop detail: Files (with a file mid-transfer) | dark | `cb5821b940e54a358e500564c798c620` | `screens/android-detail-files.png` |
-| Laptop detail: Files, empty | dark | `c08637559dfb4461a26c23a268e9bed5` | `screens/android-detail-files-empty.png` |
+| Laptop detail: Files (with a file mid-transfer), **icon buttons (v3)** | dark | `72ed333580064425a2446cd8e29c3eea` | `screens/android-detail-files.png` |
+| Laptop detail: Files, empty, **icon buttons (v3)** | dark | `f9fd8a0372c94654b493b1b677348737` | `screens/android-detail-files-empty.png` |
 | Laptop detail: not connected (offline banner, saved history, "Connect to send") | dark | `babf3c643e824d7396126b84aa752e37` | `screens/android-detail-not-connected.png` |
 | New transfer: choose type (Image / Text / Document) | dark | `0e511268de98464a8e7eeae7bd5fbde3` | `screens/android-new-transfer-sheet.png` |
 | New transfer: Text compose | dark | `effe229ab83b4ada99b53f21da6be3f3` | `screens/android-new-transfer-text.png` |
@@ -71,9 +71,7 @@ Target spec: [`.stitch/DESIGN.md`](../../.stitch/DESIGN.md) §6 (two rounded 44�
 | Devices list, dark (`a83b6859…`) | **v3 done.** Row buttons for all three states; the Tailscale row shows Wi-Fi grey and link green; pairing state moved into the subtitle (`100.101.102.103 · Paired`) so no status text sits next to the icons |
 | Laptop detail: Messages (`f22d86df…`) | **v3 done** (both ON) |
 | Laptop detail: Images empty (`432109ac80e747219cced4dbe150f295`) | **v3 done** (both ON, no text button) |
-| Laptop detail: Images (populated) | v2 (`0c348cf5...`). The v3 call timed out on 2026-09-22 and did not appear in `list_screens`. **Still to convert** |
-| Laptop detail: Files | v2 (`cb5821b9...`). A v3 call timed out on 2026-09-22 (may complete later; check `list_screens` for "Files"). **Still to convert / confirm** |
-| Laptop detail: Files empty | v2 (`c0863755...`). **Still to convert** |
+| Laptop detail: Images (`38a4331b...`), Files (`72ed3335...`), Files empty (`f9fd8a03...`) | **v3 done** (both ON, no text button) |
 | Laptop detail: not connected | v2 (`babf3c64...`). **Still to convert (both OFF, link = tap to connect)** |
 | Laptop detail: Tailscale route | `ad67d5f8966c405a92435e2f5a36add6` exists but has a visible "via Tailscale" caption, which is **not allowed**; superseded. **To create:** Wi-Fi OFF, link ON, route shown by an info tooltip bubble on the Wi-Fi icon; plus a small route popup (Wi-Fi / Tailscale / address) |
 | Devices list, light (`0d5b5a2b…`) | v2 icons with status words `Paired` / `Not paired` beside them. **Still to convert to v3** |
@@ -109,6 +107,7 @@ Stitch has no delete tool, so earlier iterations remain in the project. Do not i
 | `5bfc3bf76e4d4ae1a36dc734e7384ad9` | light Devices list with text status | `0d5b5a2b…` |
 | `000280748ff74326abcb889d5101c3e7` | empty state without tab bar | `3241560b…` |
 | `f04a1836550c42bab81668bf94297569`, `74d01f5c0de24975aa0a790de9fece00` | pairing waiting / approved, older header | `38d00674…`, `653c521d…` |
+| `0c348cf5efc440a28e6891c701404a0d`, `cb5821b940e54a358e500564c798c620`, `c08637559dfb4461a26c23a268e9bed5` | detail Images / Files / Files empty with small icons and a text Disconnect button (v2) | `38a4331b...`, `72ed3335...`, `f9fd8a03...` |
 | `0ea25c9867dd4afa86f7f60e499a7399` | Images empty, small icons plus text Disconnect (v2) | `432109ac...` |
 | `ad67d5f8966c405a92435e2f5a36add6` | Tailscale route with a visible caption (not allowed) | to create (tooltip variant) |
 | `919f332856ab417ea5becf551db65a75`, `1dbc2dc330034431a3db5c218b4ebb8c`, `15562c610e2847d3b6d6f0a134caec2c`, `6db95cecea1a4e9699069af38910a600`, `cf4a3d9d19884fdaab60bb83fd822ea9`, `9e078367c2a34073b109bc087ee163b2` | laptop detail with "Connected" text status | the versions in the table above |
