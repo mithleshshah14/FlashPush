@@ -9,6 +9,7 @@ import 'package:flashpush/data/history_cache.dart';
 import 'package:flashpush/data/laptop_store.dart';
 import 'package:flashpush/data/secret_store.dart';
 import 'package:flashpush/net/discovery.dart';
+import 'package:flashpush/ui/platform_actions.dart';
 import 'package:flashpush/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,4 +83,28 @@ void usePhoneScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(412 * 3, 915 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+}
+
+/// Records what the screens ask of the Android platform, and answers from scripted values.
+class FakeActions {
+  List<PickedFile> toPick = [];
+  bool canOpenLinks = true;
+  final List<bool> picks = []; // imagesOnly of each picker call
+  final List<(String path, String name)> saved = [];
+  final List<String> opened = [];
+
+  PlatformActions get actions => PlatformActions(
+        pickFiles: ({required bool imagesOnly}) async {
+          picks.add(imagesOnly);
+          return toPick;
+        },
+        saveToDownloads: (path, name) async {
+          saved.add((path, name));
+          return 'Downloads/FlashPush/$name';
+        },
+        openLink: (url) async {
+          opened.add(url);
+          return canOpenLinks;
+        },
+      );
 }
