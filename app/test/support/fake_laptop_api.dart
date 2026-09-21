@@ -117,18 +117,18 @@ class FakeLaptopApi implements LaptopApi {
 
   @override
   Future<Item> sendText(String token, String text, String operationId) async {
+    network.operationIds.add(operationId);
     _maybeFail();
     network.sentTexts.add(text);
-    network.operationIds.add(operationId);
     return network.textItem('sent-${network.sentTexts.length}', from: 'phone');
   }
 
   @override
   Future<Item> sendFile(String token, File file, String name, String operationId, {Progress? onProgress}) async {
+    network.operationIds.add(operationId);
     _maybeFail();
     final size = await file.length();
     onProgress?.call(size, size);
-    network.operationIds.add(operationId);
     return Item(id: 'file-${network.operationIds.length}', kind: 'file', from: 'phone', time: DateTime(2026), name: name, size: size, mime: 'application/octet-stream');
   }
 
