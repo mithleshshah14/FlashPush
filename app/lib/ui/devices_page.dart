@@ -194,7 +194,8 @@ class _RouteChip extends StatelessWidget {
   }
 }
 
-/// Pairing state as a word (never connection state, which is shown by the icons only).
+/// A word only where the laptop needs the user to act (not paired, identity changed). A paired laptop shows
+/// nothing here: pairing is not a status to read, and connection state is shown by the icons only.
 class _PairingWord extends StatelessWidget {
   const _PairingWord({required this.state});
 
@@ -202,11 +203,13 @@ class _PairingWord extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (String text, Color color) = switch (state) {
+    final (String text, Color color)? shown = switch (state) {
       LinkState.notPaired || LinkState.unpaired => ('Not paired', context.flash.off),
       LinkState.certChanged => ('Identity changed', context.flash.warning),
-      _ => ('Paired', Theme.of(context).colorScheme.primary),
+      _ => null,
     };
+    if (shown == null) return const SizedBox.shrink();
+    final (text, color) = shown;
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(Icons.circle, size: 10, color: color),
       const SizedBox(width: 8),

@@ -315,7 +315,7 @@ The app has **bottom navigation with three tabs: Devices, Transfer, Settings.**
 
 Over Tailscale the Wi-Fi icon stays grey, the connection icon is green and the laptop detail subtitle reads "via Tailscale". Icons differ in shape and carry accessible labels, so state is never colour alone.
 
-1. **Devices (laptops list):** discovered + saved laptops, each row with the laptop name and the two status icons (the connection icon is the connect/disconnect button); "Can't find your laptop? Add by address"; pull-to-refresh rescans. **Tapping a laptop row opens its detail screen** (item 2); the Connect button on the row only connects/disconnects.
+1. **Devices (laptops list):** discovered + saved laptops, each row with the laptop name, its address and route chip, and the two status icons (the connection icon is the connect/disconnect button). **A paired laptop shows no status word** ("Paired" next to a grey link icon read as a contradiction); words appear only where the user must act: "Not paired" (with "Needs approval on the laptop") and "Identity changed"; "Can't find your laptop? Add by address"; pull-to-refresh rescans. **Tapping a laptop row opens its detail screen** (item 2); the Connect button on the row only connects/disconnects.
 2. **Laptop detail** (a screen of its own, opened from the list): header with the laptop name and the **two status icons** (below), then three **separate tabs**:
    - **Messages:** previous text and links, both directions, newest last, with copy/open.
    - **Images:** a thumbnail grid of every image sent or received; tap for full view and Save.
