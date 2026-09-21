@@ -102,7 +102,7 @@ void main() {
     expect(s.app.connectionFor('laptop-a')!.state, LinkState.paired);
     expect(find.text('Showing saved history'), findsOneWidget);
     expect(find.text('Booked the room for 3 pm'), findsOneWidget);
-    expect(find.byKey(const Key('new-transfer')), findsNothing);
+    expect(find.byKey(const Key('send-message')), findsNothing);
     expect(find.byKey(const Key('connect-to-send')), findsOneWidget);
 
     await tester.runAsync(() async {
@@ -111,7 +111,7 @@ void main() {
     });
     await tester.pump();
     expect(d.s.app.connectionFor('laptop-a')!.connected, isTrue);
-    expect(find.byKey(const Key('new-transfer')), findsOneWidget);
+    expect(find.byKey(const Key('send-message')), findsOneWidget);
     expect(find.text('Showing saved history'), findsNothing);
   });
 
@@ -140,21 +140,23 @@ void main() {
     expect(copied, ['Booked the room for 3 pm']);
   });
 
-  testWidgets('New transfer asks the type first: Image, Text or Document', (tester) async {
+  testWidgets('the center button follows the tab: New message, Send image, Send file', (tester) async {
     await openDetail(tester);
-    await tester.tap(find.byKey(const Key('new-transfer')));
-    await tester.pumpAndSettle();
-    expect(find.text('What do you want to send?'), findsOneWidget);
-    expect(find.byKey(const Key('choice-image')), findsOneWidget);
-    expect(find.byKey(const Key('choice-text')), findsOneWidget);
-    expect(find.byKey(const Key('choice-document')), findsOneWidget);
+    expect(find.text('New message'), findsOneWidget);
+    expect(find.text('What do you want to send?'), findsNothing, reason: 'there is no chooser step any more');
+    await openTab(tester, 'Images');
+    expect(find.text('Send image'), findsOneWidget);
+    expect(find.byKey(const Key('send-image')), findsOneWidget);
+    await openTab(tester, 'Files');
+    expect(find.text('Send file'), findsOneWidget);
+    expect(find.byKey(const Key('send-file')), findsOneWidget);
+    await openTab(tester, 'Messages');
+    expect(find.byKey(const Key('send-message')), findsOneWidget);
   });
 
-  testWidgets('Text: compose and send reaches the laptop', (tester) async {
+  testWidgets('Messages: the button opens the text box directly, and sending reaches the laptop', (tester) async {
     final d = await openDetail(tester);
-    await tester.tap(find.byKey(const Key('new-transfer')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('choice-text')));
+    await tester.tap(find.byKey(const Key('send-message')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('text-field')), 'hello from the phone');
     await tester.runAsync(() async {
@@ -166,12 +168,10 @@ void main() {
     expect(find.byKey(const Key('text-field')), findsNothing, reason: 'the composer closes after sending');
   });
 
-  testWidgets('Text: a failed send keeps the composer open with a friendly message', (tester) async {
+  testWidgets('Messages: a failed send keeps the text box open with a friendly message', (tester) async {
     final d = await openDetail(tester);
     d.s.netA.sendScript.add(ApiException('PAYLOAD_TOO_LARGE', 413, 'x'));
-    await tester.tap(find.byKey(const Key('new-transfer')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('choice-text')));
+    await tester.tap(find.byKey(const Key('send-message')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('text-field')), 'too much');
     await tester.runAsync(() async {
@@ -183,24 +183,23 @@ void main() {
     expect(find.byKey(const Key('text-field')), findsOneWidget);
   });
 
-  testWidgets('Image and Document open the picker (images only for Image) and upload with progress', (tester) async {
+  testWidgets('Images opens the gallery (images only) and Files opens the file explorer, each uploading with progress', (tester) async {
     final d = await openDetail(tester);
     final dir = await tester.runAsync(() => Directory.systemTemp.createTemp('flashpush-detail-'));
     addTearDown(() => dir!.delete(recursive: true));
     final file = File('${dir!.path}/pic.jpg')..writeAsBytesSync([1, 2, 3, 4]);
     d.actions.toPick = [PickedFile(file.path, 'pic.jpg')];
 
-    for (final (key, imagesOnly) in [('choice-image', true), ('choice-document', false)]) {
-      await tester.tap(find.byKey(const Key('new-transfer')));
-      await tester.pumpAndSettle();
+    for (final (tab, key, imagesOnly) in [('Images', 'send-image', true), ('Files', 'send-file', false)]) {
+      await openTab(tester, tab);
       await tester.runAsync(() async {
         await tester.tap(find.byKey(Key(key)));
         await Future<void>.delayed(const Duration(milliseconds: 100));
       });
       await tester.pumpAndSettle();
-      expect(d.actions.picks.last, imagesOnly, reason: key);
+      expect(d.actions.picks.last, imagesOnly, reason: tab);
     }
-    expect(d.s.netA.operationIds.length, 2, reason: 'one upload per picked file, per type');
+    expect(d.s.netA.operationIds.length, 2, reason: 'one upload per picked file, per tab');
   });
 
   testWidgets('Save on a file hands it to Downloads under its name and confirms', (tester) async {
@@ -222,7 +221,7 @@ void main() {
     await tester.pump();
     expect(find.text('Not paired anymore'), findsOneWidget);
     expect(find.byType(TabBar), findsNothing);
-    expect(find.byKey(const Key('new-transfer')), findsNothing);
+    expect(find.byKey(const Key('send-message')), findsNothing);
 
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('problem-primary')));

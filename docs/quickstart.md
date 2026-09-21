@@ -35,7 +35,7 @@ Or copy `app-debug.apk` to the phone and open it.
 
 ## 4. Send things
 
-- Phone → laptop: open the laptop, tap **New transfer**, pick **Text**, **Image** or **Document**. Files land in `Downloads\FlashPush`.
+- Phone → laptop: open the laptop and use the center button: on **Messages** it opens the text box, on **Images** the gallery, on **Files** the file explorer. Files land in `Downloads\FlashPush`.
 - Laptop → phone: on the Dashboard use **Send to phone** (text or drag a file in). It appears in the phone's Messages / Images / Files tabs.
 - Share to FlashPush from any Android app's Share menu.
 

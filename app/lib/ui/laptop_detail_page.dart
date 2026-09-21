@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import '../net/connection.dart';
 import '../net/link_state.dart';
 import '../net/transfer_queue.dart';
 import 'connection_controls.dart';
 import 'file_list.dart';
 import 'image_grid.dart';
 import 'message_list.dart';
-import 'new_transfer_sheet.dart';
 import 'platform_actions.dart';
 import 'problem_view.dart';
+import 'send_action.dart';
 
-/// One laptop: its history split into Messages, Images and Files, plus New transfer.
+/// One laptop: its history split into Messages, Images and Files, and a center button that sends for the current tab.
 /// With no connection the saved history stays readable; sending needs a connection.
 class LaptopDetailPage extends StatefulWidget {
   const LaptopDetailPage({
@@ -111,15 +112,11 @@ class _LaptopDetailPageState extends State<LaptopDetailPage> {
                       ),
                     ],
                   ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
             floatingActionButton: problem
                 ? null
                 : connection.connected
-                    ? FloatingActionButton.extended(
-                        key: const Key('new-transfer'),
-                        onPressed: () => showNewTransferSheet(context, connection: connection, queue: _queue, actions: widget.actions),
-                        icon: const Icon(Icons.add),
-                        label: const Text('New transfer'),
-                      )
+                    ? _SendButton(connection: connection, queue: _queue, actions: widget.actions)
                     : FloatingActionButton.extended(
                         key: const Key('connect-to-send'),
                         onPressed: state == LinkState.connecting ? null : () => widget.controller.connect(widget.laptopId),
@@ -127,6 +124,32 @@ class _LaptopDetailPageState extends State<LaptopDetailPage> {
                         label: const Text('Connect to send'),
                       ),
           ),
+        );
+      },
+    );
+  }
+}
+
+/// The center button: its label and what it opens follow the selected tab (message, image or file).
+class _SendButton extends StatelessWidget {
+  const _SendButton({required this.connection, required this.queue, required this.actions});
+
+  final LaptopConnection connection;
+  final TransferQueue queue;
+  final PlatformActions actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = DefaultTabController.of(context);
+    return ListenableBuilder(
+      listenable: tabs,
+      builder: (context, _) {
+        final kind = SendKind.forTab(tabs.index);
+        return FloatingActionButton.extended(
+          key: Key(kind.key),
+          onPressed: () => startSend(context, kind, connection: connection, queue: queue, actions: actions),
+          icon: Icon(kind.icon),
+          label: Text(kind.label),
         );
       },
     );

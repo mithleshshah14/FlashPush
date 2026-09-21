@@ -215,3 +215,12 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Launcher icon | adaptive icon: brand artwork with the navy keyed out on a navy gradient, art scaled into the 66 dp safe zone; rounded tiles for old Android | the source PNG has painted black corners and an opaque navy tile; keying gives clean results under circle, squircle and rounded-square masks |
 | Generator | `scripts/make-android-icons.py`, Pillow only | reproducible; no PowerShell or other script hosts (see `docs/dev-safety.md`) |
 | Not done | monochrome (themed) icon layer | Android 13+ themed icons would need a separate single-color glyph |
+
+## 2026-09-22 — the center button acts on the current tab (user feedback)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Sending | the round center button follows the tab: Messages → text box, Images → gallery, Files → file explorer | requested: no extra "New transfer" chooser step |
+| Type chooser sheet | removed (supersedes the earlier "New transfer asks the type first" decision) | it became dead code; one tap now does the job |
+| Button position | bottom center | requested ("click on center") |
+| Stitch designs | the "New transfer: choose type" sheet screens are superseded by this behaviour; the per-tab button is not yet drawn in Stitch | the app and spec are the source of truth until the designs are refreshed |
