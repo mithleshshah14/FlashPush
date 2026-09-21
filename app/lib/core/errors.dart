@@ -19,6 +19,14 @@ class CertificateChanged implements Exception {
   String toString() => 'CertificateChanged';
 }
 
+/// An action needed a live session but the phone is not connected to the laptop.
+class NotConnected implements Exception {
+  const NotConnected();
+
+  @override
+  String toString() => 'NotConnected';
+}
+
 /// No connection could be made (offline, refused, timed out).
 class Unreachable implements Exception {
   const Unreachable();

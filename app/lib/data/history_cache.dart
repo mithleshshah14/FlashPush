@@ -30,10 +30,20 @@ class HistoryCache {
     }
   }
 
-  Future<void> save(String laptopId, List<Item> items) async {
-    final file = _itemsFile(laptopId);
-    await file.parent.create(recursive: true);
-    await file.writeAsString(jsonEncode([for (final i in items) i.toJson()]));
+  Future<void> _lastWrite = Future.value();
+
+  /// Writes are queued one after another and land atomically, so overlapping saves cannot corrupt the file.
+  Future<void> save(String laptopId, List<Item> items) {
+    final json = jsonEncode([for (final i in items) i.toJson()]);
+    final write = _lastWrite.then((_) async {
+      final file = _itemsFile(laptopId);
+      await file.parent.create(recursive: true);
+      final temp = File('${file.path}.tmp');
+      await temp.writeAsString(json);
+      await temp.rename(file.path);
+    });
+    _lastWrite = write.catchError((Object _) {});
+    return write;
   }
 
   File imageFile(String laptopId, String itemId) {
