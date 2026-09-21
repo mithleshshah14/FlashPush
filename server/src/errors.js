@@ -16,6 +16,8 @@ const TABLE = {
   STORAGE_QUOTA: [507, 'The storage limit has been reached.'],
   ITEM_NOT_FOUND: [404, 'Item not found.'],
   INTERNAL: [500, 'Something went wrong on the laptop.'],
+  NOT_FOUND: [404, 'Not found.'],
+  FORBIDDEN: [403, 'Forbidden.'],
 };
 
 class ApiError extends Error {

@@ -85,3 +85,11 @@ test('endByToken, endForDevice and endAll', () => {
   ]);
   assert.equal(store.isConnected('c'), false);
 });
+
+test('create emits a start event', () => {
+  const { store } = make();
+  const started = [];
+  store.on('start', (e) => started.push(e));
+  store.create('dev');
+  assert.deepEqual(started, [{ deviceId: 'dev' }]);
+});

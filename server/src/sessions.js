@@ -30,6 +30,7 @@ class SessionStore extends EventEmitter {
     const session = { deviceId, token: c.b64uEncode(c.random(c.SIZES.token)), createdAt: t, lastUsed: t };
     this.byToken.set(session.token, session);
     this.byDevice.set(deviceId, session);
+    this.emit('start', { deviceId });
     return { token: session.token, expiresAt: this._expiry(session) };
   }
 
