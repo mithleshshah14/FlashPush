@@ -109,7 +109,7 @@ async function startApi(t, limitOverrides = {}) {
     return { deviceId, secret, token: session.json.sessionToken };
   }
 
-  return { base, call, events, pairDevice, api, devices, sessions, pairing, store, ops, receiveDir, outboxDir, limits };
+  return { base, call, events, pairDevice, api, devices, sessions, pairing, store, ops, receiveDir, outboxDir, limits, fingerprint };
 }
 
 module.exports = { startApi };
