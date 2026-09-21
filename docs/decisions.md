@@ -63,3 +63,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | One `expiresAt` deadline per pairing record | replaces the 4-branch expiry check | |
 | `rng` injection, TLS `now`, `CODES` export, `config.json` limits removed | nothing used them (`config.json` still sets ports and the receive folder, e.g. when a port is taken) | spec §2 |
 | **Rejected:** drop TLS/pinning/SAS and rely on Tailscale only | LAN use without Tailscale is a goal, and the design was approved; recorded as considered | |
+
+## Plan 1A — server security core
+
+| Decision | Choice | Why |
+|---|---|---|
+| Unrevealed pair requests | expire after 10 s (`pairRevealWindowMs`) | the phone reveals immediately; otherwise 3 unrevealed requests could block pairing for 2 minutes |
+| Certificate library | `selfsigned` 5.x (`keyType: 'ec'`, `notAfterDate`) | pure JS, supports P-256; `days` is not an option in this version |
+| Timing | injectable `now` | every expiry rule is tested with a fake clock, no sleeping |
+| State files | `%APPDATA%\FlashPush`, atomic JSON writes | survives crashes; independent of the launch directory |
+| Simplifications from the over-engineering review | see the "over-engineering review of Plan 1A" section of this file | fewer moving parts before anything is built |
