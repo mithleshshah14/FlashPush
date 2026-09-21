@@ -1,0 +1,9 @@
+# Node server
+server/node_modules/
+server/data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
