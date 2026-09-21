@@ -206,3 +206,12 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Laptop UI | approved as designed; dark and light kept | user feedback |
 | Light theme | derived from the same hues (`#F4F8FF` background, darker mint `#0BB58F`) for the Devices list and the laptop screens | spec §9.1 |
 | Design workflow | one screen per generation call; all changes in the initial prompt; export via `=w780` / `=w2560` | Stitch `edit_screens` does not persist and variants keep only the first change (`docs/design/README.md`) |
+
+## 2026-09-22 — first run on a real phone
+
+| Decision | Choice | Why |
+|---|---|---|
+| Wi-Fi icon meaning | on = the laptop answered the latest Wi-Fi discovery (or the connection is up over Wi-Fi), regardless of pairing | the spec says "reaches the laptop over the local Wi-Fi"; showing a crossed-out Wi-Fi next to a laptop that was just discovered over Wi-Fi is misleading |
+| Launcher icon | adaptive icon: brand artwork with the navy keyed out on a navy gradient, art scaled into the 66 dp safe zone; rounded tiles for old Android | the source PNG has painted black corners and an opaque navy tile; keying gives clean results under circle, squircle and rounded-square masks |
+| Generator | `scripts/make-android-icons.py`, Pillow only | reproducible; no PowerShell or other script hosts (see `docs/dev-safety.md`) |
+| Not done | monochrome (themed) icon layer | Android 13+ themed icons would need a separate single-color glyph |
