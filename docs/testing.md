@@ -103,7 +103,7 @@ Behaviour-based scanners can flag a program that starts a hidden PowerShell scri
 - **Connection state machine** with a fake network: address race, Tailscale route, backoff sequence, foreground pause and resume, immediate reconnect on an expired session, the terminal states, live events, revoked sessions, `withSession` retry, forget.
 - **Discovery** (UDP, loopback only) and its 0 s / 3 s / 6 s / 12 s policy; the address race (fastest wins, a dead address does not delay, losers cancelled, per-candidate timeout).
 - **Pairing flow** against a fake laptop that computes its side independently, and the pairing screen.
-- **Screens:** Devices, Add by address, Laptop detail (tabs, empty states, offline mode, New transfer for Image/Text/Document, Save, problem states), Transfer tab, Settings, the shell (tabs, discovery only on Devices, shares, theme), and the two-icon connection controls (no status words, 48 dp targets, accessible labels).
+- **Screens:** Devices, Add by address, Laptop detail (tabs, empty states, offline mode, the per-tab send button for message/image/file, Save, problem states), Transfer tab, Settings, the shell (tabs, discovery only on Devices, shares, theme), and the two-icon connection controls (no status words, 48 dp targets, accessible labels).
 - **Android bridge:** share intake and save-to-Downloads through a mocked platform channel.
 
 #### Rules for tests in this repository
@@ -134,8 +134,8 @@ The automated tests cannot cover the Android platform or a real network. Run thi
 
 #### Transfers
 
-- [ ] Text: New transfer > Text > send; it appears on the laptop. Send from the laptop; it appears on the phone live.
-- [ ] Image: New transfer > Image; pick two photos; progress shows; both appear on the laptop (in `Downloads\FlashPush`).
+- [ ] Text: on the Messages tab tap *New message*, type and send; it appears on the laptop. Send from the laptop; it appears on the phone live.
+- [ ] Image: on the Images tab tap *Send image* (the gallery opens at once); pick two photos; progress shows; both appear on the laptop (in `Downloads\FlashPush`).
 - [ ] Document: send a PDF; then send a file of a few hundred MB and watch progress.
 - [ ] Laptop to phone: send an image and a PDF from the admin page; they show under Images and Files; Save puts them in **Downloads/FlashPush** on the phone.
 - [ ] Messages, Images and Files each show only their own kind; empty states look right.
@@ -147,7 +147,7 @@ The automated tests cannot cover the Android platform or a real network. Run thi
 - [ ] Stop the server while connected: the icons go grey and the app keeps retrying (it reconnects on its own after the server restarts).
 - [ ] Press Disconnect, then stop and start the server: the app does **not** reconnect by itself.
 - [ ] Lock the phone for a minute and unlock: the list refreshes and the connection is restored.
-- [ ] Disconnected, open the laptop: saved Messages, Images and Files are still readable ("Showing saved history"); New transfer is replaced by Connect to send.
+- [ ] Disconnected, open the laptop: saved Messages, Images and Files are still readable ("Showing saved history"); the center button is replaced by Connect to send.
 - [ ] Settings: turn off Reconnect automatically; stop the server; the app tries once and stays grey.
 
 #### Security behaviour

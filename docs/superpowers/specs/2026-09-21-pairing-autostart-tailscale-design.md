@@ -320,8 +320,8 @@ Over Tailscale the Wi-Fi icon stays grey, the connection icon is green and the l
    - **Messages:** previous text and links, both directions, newest last, with copy/open.
    - **Images:** a thumbnail grid of every image sent or received; tap for full view and Save.
    - **Files:** documents and other files with name, size, direction and Save/Open.
-   A prominent **New transfer** button opens item 3.
-3. **New transfer:** a bottom sheet that first asks the **type**: **Image** (gallery or camera), **Text** (compose text or paste a link) or **Document** (any file). Then the pick/compose step, then progress. If the laptop is not connected it offers to connect first.
+   A round **button at the bottom center** sends for the tab you are on (item 3).
+3. **Send from the current tab** (replaces the earlier "New transfer" chooser sheet): the center button's label and action follow the tab. **Messages** → *New message* opens the text box; **Images** → *Send image* opens the gallery; **Files** → *Send file* opens the file explorer. There is no type-choosing step; progress shows on the screen. If the laptop is not connected the button reads *Connect to send*.
 4. **Pairing:** shows the 6-digit code, "Check it matches the laptop, then approve there", cancel; states approved / denied / expired.
 5. **Transfer tab:** a shortcut to the detail screen of the currently connected laptop, or "Connect a laptop first" with a button to the Devices tab.
 6. **Settings:** this phone's name, paired laptops (Re-pair, Forget), appearance (system / dark / light), connection (auto-reconnect, scan again), about.
