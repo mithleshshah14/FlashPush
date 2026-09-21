@@ -232,7 +232,7 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 
 ### 6.2 Reconnect behavior
 
-- The app holds a **connect intent**. Pressing **Disconnect** clears it. Temporary network loss or a laptop restart keeps it.
+- The app holds a **connect intent**, remembered across app restarts (the laptop id is stored with the settings): closing and reopening the app, or a restart of the laptop's server, reconnects on its own. Pressing **Disconnect**, **Forget**, or connecting another laptop clears it, and with the auto-reconnect setting off the app does not resume on start. Temporary network loss or a laptop restart keeps it.
 - With intent set, retry with exponential backoff (2 s, 4 s, 8 s … capped at **60 s**), only while the app is in the foreground, and re-running the address race each time.
 - `SESSION_EXPIRED` → reconnect immediately with the device secret.
 - `DEVICE_NOT_PAIRED` (revoked or forgotten on the laptop) → clear intent, mark **Not paired**, offer **Re-pair** or **Forget**. No more retries.

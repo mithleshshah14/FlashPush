@@ -17,6 +17,12 @@ class AppSettings {
 
   Future<void> setThemeMode(ThemeMode mode) => _prefs.setString('themeMode', mode.name);
 
+  /// The laptop the user asked to be connected to. It is kept across app restarts so the connection can be
+  /// resumed, and cleared by Disconnect, Forget or connecting another laptop.
+  String? get activeLaptopId => _prefs.getString('activeLaptopId');
+
+  Future<void> setActiveLaptopId(String? id) => id == null ? _prefs.remove('activeLaptopId') : _prefs.setString('activeLaptopId', id);
+
   bool get autoReconnect => _prefs.getBool('autoReconnect') ?? true;
 
   Future<void> setAutoReconnect(bool value) => _prefs.setBool('autoReconnect', value);

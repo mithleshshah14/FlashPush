@@ -247,3 +247,11 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Rendering | new bubbles are appended, the thread is rebuilt only on removal or phone change | screen readers announce only the new message, and the scroll position is kept |
 | View tests | a small fake DOM (`fake-dom.js`) instead of a browser or jsdom | no new dependency and no browser launch (see `docs/dev-safety.md`) |
 | Design | built from the existing tokens; no Stitch screen yet (prompt in `docs/design/README.md`) | Stitch access is rate limited; the behaviour was the request |
+
+## 2026-09-22 — the connection resumes by itself (found on the real phone)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Cause | the connect intent was only in memory, so after an app restart or a reinstall the laptop showed "paired, not connected" and only the Wi-Fi icon was green | user observation: after pairing both icons should be green |
+| Fix | remember the laptop the user asked to connect (`activeLaptopId`); reconnect it at app start when auto-reconnect is on; clear it on Disconnect, Forget or connecting another laptop | matches spec 6.2 ("keeps the intent unless the user pressed Disconnect") which the first implementation only honoured while the app process lived |
+| Not resumed | with auto-reconnect off; a laptop that was never connected | respects the setting; no surprise connections |

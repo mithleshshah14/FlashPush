@@ -70,6 +70,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     discovery.addListener(_onDiscovery);
     WidgetsBinding.instance.addObserver(this);
     notifyListeners();
+    final resume = settings.activeLaptopId;
+    if (resume != null && settings.autoReconnect && _connections.containsKey(resume)) unawaited(connect(resume));
   }
 
   Future<LaptopConnection> _adopt(Laptop laptop, Credentials credentials) async {
@@ -148,13 +150,17 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> connect(String id) async {
     final connection = _connections[id];
     if (connection == null) return;
+    await settings.setActiveLaptopId(id);
     for (final other in _connections.values) {
       if (other != connection && other.state != LinkState.paired) await other.disconnect();
     }
     await connection.connect();
   }
 
-  Future<void> disconnect(String id) async => _connections[id]?.disconnect();
+  Future<void> disconnect(String id) async {
+    if (settings.activeLaptopId == id) await settings.setActiveLaptopId(null);
+    await _connections[id]?.disconnect();
+  }
 
   // ---- pairing ----------------------------------------------------------------------
 
@@ -184,6 +190,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> forget(String id) async {
     final connection = _connections.remove(id);
     if (connection == null) return;
+    if (settings.activeLaptopId == id) await settings.setActiveLaptopId(null);
     await connection.forget();
     connection.dispose();
     notifyListeners();
