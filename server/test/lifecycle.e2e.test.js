@@ -145,3 +145,17 @@ test('stop is idempotent and closes the ports', async (t) => {
   await app.stop();
   await assert.rejects(adminRequest(admin, 'GET', '/admin/ping'), (e) => e.code === 'ECONNREFUSED');
 });
+
+test('the MagicDNS name reaches the address list served to the admin page', async (t) => {
+  const home = tmpDir(t);
+  const app = await createApp({
+    home,
+    overrides: { ports: { device: 0, admin: 0, discovery: 0 }, receiveDir: path.join(home, 'received') },
+    log: () => {},
+    readTailscaleName: async () => 'mithlesh-pc.tail1234.ts.net',
+  });
+  t.after(() => app.stop({ graceMs: 50 }));
+  const ports = await app.start();
+  const state = await adminRequest(ports.admin, 'GET', '/admin/state');
+  assert.ok(state.json.addresses.some((a) => a.kind === 'tailscale-name' && a.name === 'mithlesh-pc.tail1234.ts.net'));
+});

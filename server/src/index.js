@@ -14,7 +14,7 @@ const { PairingManager } = require('./pairing');
 const { ItemStore } = require('./store');
 const { OperationCache } = require('./idempotency');
 const { sweepPartFiles } = require('./transfers');
-const { listAddresses } = require('./addresses');
+const { createAddressProvider } = require('./addresses');
 const { createDiscovery } = require('./discovery');
 const { createDeviceApi } = require('./deviceApi');
 const { createAdminApi } = require('./adminApi');
@@ -39,7 +39,7 @@ function stopAccepting(server) {
 }
 
 /** Builds every module, wires their events together, and returns start/stop. */
-async function createApp({ home, overrides = {}, log = console.log } = {}) {
+async function createApp({ home, overrides = {}, log = console.log, readTailscaleName } = {}) {
   const config = loadConfig({ home, overrides });
   for (const dir of [config.home, config.paths.outbox, config.receiveDir]) fs.mkdirSync(dir, { recursive: true });
   const stale = sweepPartFiles(config.receiveDir) + sweepPartFiles(config.paths.outbox);
@@ -70,12 +70,14 @@ async function createApp({ home, overrides = {}, log = console.log } = {}) {
 
   const bound = { device: 0, admin: 0, discovery: 0 };
   const ports = () => ({ ...bound });
-  const deviceApi = createDeviceApi({ identity, devices, sessions, pairing, store, ops, limits, receiveDir: config.receiveDir, addresses: listAddresses, notify: changed });
+  const addressProvider = createAddressProvider({ readName: readTailscaleName });
+  const addresses = addressProvider.list;
+  const deviceApi = createDeviceApi({ identity, devices, sessions, pairing, store, ops, limits, receiveDir: config.receiveDir, addresses, notify: changed });
   const pageHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'admin.html'), 'utf8');
   const adminApi = createAdminApi({
     identity, devices, sessions, pairing, store, limits,
     receiveDir: config.receiveDir, outboxDir: config.paths.outbox,
-    addresses: listAddresses, getPorts: ports, bus, notify: changed, pageHtml, getStatus: () => lifecycle.status(),
+    addresses, getPorts: ports, bus, notify: changed, pageHtml, getStatus: () => lifecycle.status(),
   });
 
   const deviceServer = https.createServer({ key: tls.key, cert: tls.cert, minVersion: 'TLSv1.2' }, deviceApi.handler);
@@ -133,6 +135,10 @@ async function createApp({ home, overrides = {}, log = console.log } = {}) {
       throw err;
     }
     timers.push(setInterval(() => pairing.sweep(), 10_000).unref());
+    if (readTailscaleName) {
+      await addressProvider.refresh();
+      timers.push(setInterval(() => addressProvider.refresh(), 60_000).unref());
+    }
     if (failures && failures.length) lifecycle.degraded(failures.join(' '));
     else lifecycle.running();
     return ports();
