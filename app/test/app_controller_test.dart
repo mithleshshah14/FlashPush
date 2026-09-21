@@ -37,6 +37,19 @@ void main() {
     expect(rows.last.discovered!.host, '192.168.1.22');
   });
 
+  test('the Wi-Fi icon is on for every laptop that answered discovery on the Wi-Fi, paired or not', () async {
+    final s = await setup(saved: const [laptopA]);
+    s.discovered.add(const DiscoveredLaptop(laptopId: 'laptop-c', name: 'Office-Desktop', host: '192.168.1.22', port: 8765));
+    await s.app.discovery.scanNow();
+    final first = {for (final r in s.app.rows) r.id: r};
+    expect(first['laptop-c']!.wifiUp, isTrue, reason: 'seen on the Wi-Fi, not paired');
+    expect(first['laptop-a']!.wifiUp, isFalse, reason: 'saved but not seen in this scan');
+
+    s.discovered.add(const DiscoveredLaptop(laptopId: 'laptop-a', name: 'MITHLESH-PC', host: '192.168.1.6', port: 8765));
+    await s.app.discovery.scanNow();
+    expect(s.app.rows.firstWhere((r) => r.id == 'laptop-a').wifiUp, isTrue, reason: 'paired and seen on the Wi-Fi');
+  });
+
   test('connected laptops are listed first', () async {
     final s = await setup();
     await s.app.connect('laptop-b');

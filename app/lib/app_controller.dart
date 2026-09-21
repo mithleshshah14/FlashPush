@@ -91,6 +91,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   // ---- what the screens show ------------------------------------------------------
 
   /// Connected first, then paired, then laptops that are only seen on the network.
+  /// The Wi-Fi icon means "reaches the laptop over the local Wi-Fi": true when connected over Wi-Fi,
+  /// and also for any laptop that answered the latest Wi-Fi discovery scan, paired or not.
   List<LaptopRow> get rows {
     final rows = <LaptopRow>[
       for (final c in _connections.values)
@@ -100,13 +102,13 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
           host: c.laptop.lastHost ?? (c.laptop.addresses.isEmpty ? null : c.laptop.addresses.first.host),
           state: c.state,
           route: c.route,
-          wifiUp: c.wifiUp,
+          wifiUp: c.wifiUp || _discovered(c.laptop.id) != null,
           connection: c,
           discovered: _discovered(c.laptop.id),
         ),
       for (final d in discovery.results)
         if (!_connections.containsKey(d.laptopId))
-          LaptopRow(id: d.laptopId, name: d.name, host: d.host, state: LinkState.notPaired, route: RouteKind.none, wifiUp: false, discovered: d),
+          LaptopRow(id: d.laptopId, name: d.name, host: d.host, state: LinkState.notPaired, route: RouteKind.none, wifiUp: true, discovered: d),
     ];
     int rank(LaptopRow r) => r.state == LinkState.connected ? 0 : (r.paired ? 1 : 2);
     return rows..sort((a, b) => rank(a).compareTo(rank(b)));

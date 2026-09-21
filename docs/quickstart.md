@@ -57,5 +57,5 @@ Full manual checklists: [testing.md](testing.md). Setup details and troubleshoot
 ## Known gaps
 
 - The Android app has not been run on a real device yet; expect first-run rough edges and report them.
-- The launcher icon is still the default Flutter one; camera capture is not built (gallery only).
+- Camera capture is not built (gallery only); the launcher has no themed (monochrome) icon.
 - The rewritten tray script has only had static checks; its first real run is on your machine.
