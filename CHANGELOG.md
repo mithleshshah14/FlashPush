@@ -22,6 +22,10 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - New dependency: `selfsigned`. The v1 `server.js` and web page are untouched until Plan 1B replaces them.
 - `docs/pairing.md` (exact protocol, timings, test vectors).
 
+### Changed (spec, phone screens)
+- Spec §9: bottom tabs Devices / Transfer / Settings; tapping a laptop opens a detail screen with separate Messages, Images and Files tabs and a New transfer sheet (Image / Text / Document); phone keeps a local history cache. Spec §7: items belong to one phone (`deviceId`) and files carry `mime`; §7.1 no longer claims limits are editable in `config.json`.
+- Requirements forwarded to the Stitch designer (screens: laptop detail x3 tabs, new-transfer sheet, compose, offline state, Transfer and Settings tabs, laptop UI).
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

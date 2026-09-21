@@ -73,3 +73,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Timing | injectable `now` | every expiry rule is tested with a fake clock, no sleeping |
 | State files | `%APPDATA%\FlashPush`, atomic JSON writes | survives crashes; independent of the launch directory |
 | Simplifications from the over-engineering review | see the "over-engineering review of Plan 1A" section of this file | fewer moving parts before anything is built |
+
+## 2026-09-21 — phone screens: laptop detail and new transfer
+
+| Decision | Choice | Why |
+|---|---|---|
+| Tapping a laptop | opens a **laptop detail** screen with separate **Messages / Images / Files** tabs and a **New transfer** button | requested: read previous messages, see sent images and files separately, start a transfer |
+| New transfer | bottom sheet asks the type first: **Image**, **Text**, **Document** | requested |
+| Bottom navigation | Devices, Transfer, Settings; the Transfer tab is a shortcut to the connected laptop's detail screen | keeps the earlier Transfer/Settings request without two screens doing the same job |
+| History offline | phone caches item metadata and image thumbnails per laptop | history must be readable while disconnected |
+| Items belong to one phone | every history entry has a `deviceId`; a phone sees only its own; files carry a `mime` type | several paired phones must not read each other's messages; `mime` lets the phone split Images from Files |
