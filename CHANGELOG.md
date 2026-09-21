@@ -94,6 +94,10 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Added (antivirus safety)
 - `server/test/guard.js` + `guard.test.js` (loaded by `npm test`): tests can no longer launch PowerShell, VBS hosts, netsh, schtasks and similar; `docs/dev-safety.md` documents the rules and what to do on an alert. Server suite: **174 tests**.
 
+### Integrated (all v2 branches merged into `develop`)
+- Server, Windows shell, Stitch-designed laptop UI, Android app, Stitch design docs and the antivirus test guard are all on `develop`. Merged tree verified: server **309 tests**, app **170 tests**, `flutter analyze` clean. New: `docs/quickstart.md`.
+- Not verified without hardware: the Android app on a real phone (discovery, pairing, share sheet, Downloads), the real tray/notification/autostart/firewall on the laptop, Tailscale on a real network. Checklists: `docs/testing.md`.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).
