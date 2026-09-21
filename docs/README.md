@@ -22,7 +22,7 @@
 | security.md | threat model and what is/isn't protected | written during implementation |
 | setup.md | install, autostart, firewall, Tailscale | written during implementation |
 | testing.md | automated + manual test checklists | written during implementation |
-| design/ | Stitch screens and design tokens | after spec approval |
+| [design/README.md](design/README.md) | Stitch project, 27 exported screens (phone + laptop, dark + light), prompts, tokens ([.stitch/DESIGN.md](../.stitch/DESIGN.md)), Stitch caveats | written (Plan 2) |
 
 Process: brainstorm → written spec → implementation plan → test-first implementation → docs updated in the same change.
 | [connection-state.md](connection-state.md) | phone connection states, reconnect rules, address choice | written (Plan 3) |
