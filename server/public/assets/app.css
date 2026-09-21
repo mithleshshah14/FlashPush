@@ -176,7 +176,7 @@ main { padding: 32px 40px 64px; max-width: 1240px; width: 100%; outline: none; }
   display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--inset); border: 1px solid var(--border);
   border-radius: var(--radius); min-width: 0;
 }
-.row-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.row-text { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
 .row-meta { color: var(--text-2); font: 13px var(--font-mono); margin-left: 8px; }
 .row-actions { display: flex; gap: 8px; flex: none; }
 .row .icon { display: inline-flex; color: var(--cyan); flex: none; }
@@ -190,6 +190,7 @@ main { padding: 32px 40px 64px; max-width: 1240px; width: 100%; outline: none; }
 .field::placeholder { color: var(--text-2); }
 select.field { min-height: 44px; margin-bottom: 12px; }
 .field-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 16px; flex-wrap: wrap; }
+.field-actions .btn { margin-left: auto; }
 .hint { color: var(--text-2); font-size: 14px; }
 .error-text { color: var(--danger); font-size: 14px; }
 
@@ -255,11 +256,11 @@ th:last-child, td:last-child { text-align: right; }
 /* ---------- responsive ---------- */
 
 @media (max-width: 1100px) {
-  .grid-2 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 899px) {
-  .app { grid-template-columns: 1fr; }
+  .app { grid-template-columns: minmax(0, 1fr); }
   .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--border); }
   .brand { font-size: 18px; padding: 0; }
   .nav { flex-direction: row; flex: 1 1 100%; order: 3; gap: 4px; overflow-x: auto; }
@@ -267,7 +268,6 @@ th:last-child, td:last-child { text-align: right; }
   .sidebar-foot { margin: 0 0 0 auto; padding: 0; border: 0; flex-wrap: nowrap; }
   .laptop-name { flex: none; }
   .sidebar-foot .status-pill { flex: none; padding: 4px 10px; }
-  body[data-view='dashboard'] .sidebar .status-pill { display: inline-flex; }
   main { padding: 20px 16px 48px; }
   .banner { padding: 12px 16px; }
   h1 { font-size: 26px; }

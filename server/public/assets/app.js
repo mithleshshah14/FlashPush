@@ -4,9 +4,12 @@ import { confirmDialog, copyText } from './dom.js';
 import { startLive } from './live.js';
 import { newPendingIds, parseRoute } from './model.js';
 import { createShell } from './shell.js';
+import { createApprovals } from './views/approvals.js';
+import { createDashboard } from './views/dashboard.js';
+import { createDevices } from './views/devices.js';
 import { applyTheme, readTheme, resolveTheme, saveTheme } from './theme.js';
 
-const views = {};
+const views = { dashboard: createDashboard, approvals: createApprovals, devices: createDevices };
 
 const shell = createShell();
 const root = document.documentElement;
@@ -66,11 +69,10 @@ function applyState(next) {
 
 function route() {
   const name = parseRoute(location.hash);
-  const create = views[name];
-  if (!create || name === currentName) return;
+  if (name === currentName) return;
   const changing = currentName !== null;
   currentName = name;
-  current = create(ctx);
+  current = views[name](ctx);
   shell.main.replaceChildren(current.el);
   shell.setView(name);
   if (changing) shell.focusMain();
