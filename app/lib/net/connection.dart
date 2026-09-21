@@ -187,15 +187,18 @@ class LaptopConnection extends ChangeNotifier {
       _token = session.token;
       _route = winner.candidate.isTailscale ? RouteKind.tailscale : RouteKind.wifi;
       await _remember(session.addresses, winner.candidate);
+      // Listen before fetching: the laptop does not replay events, so the other order could miss one.
+      _listen(generation, api, session.token);
       await _fetchItems(api, session.token);
       if (generation != _generation) {
         _dropSession();
         return const _Retry();
       }
       _set(LinkState.connected);
-      _listen(generation, api, session.token);
       return const _Connected();
     } on Object catch (error) {
+      await _events?.cancel(); // before closing the client, so its end is not mistaken for a lost link
+      _events = null;
       _dropSession();
       api.close();
       return _classify(error);

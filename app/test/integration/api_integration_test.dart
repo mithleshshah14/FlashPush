@@ -1,4 +1,5 @@
 // Talks to the REAL laptop server over real TLS. Skipped when Node.js is not installed.
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -79,12 +80,16 @@ void main() {
     expect((await api.items(token)).length, 2);
 
     // Laptop to phone arrives on the live event stream, and the file downloads intact.
-    final events = api.events(token);
-    final next = events.first.timeout(const Duration(seconds: 5));
-    await srv.admin('POST', '/admin/text', body: {'text': 'hello phone'});
-    final event = await next;
-    expect(event.event, 'item-added');
-    expect(Item.fromJson(event.data).text, 'hello phone');
+    // The laptop does not replay events, so keep sending until the stream is open and one arrives.
+    final received = Completer<Item>();
+    final subscription = api.events(token).listen((event) {
+      if (event.event == 'item-added' && !received.isCompleted) received.complete(Item.fromJson(event.data));
+    });
+    final ticker = Timer.periodic(const Duration(milliseconds: 300), (_) => srv.admin('POST', '/admin/text', body: {'text': 'hello phone'}));
+    final pushed = await received.future.timeout(const Duration(seconds: 15));
+    ticker.cancel();
+    await subscription.cancel();
+    expect(pushed.text, 'hello phone');
     final downloaded = await api.download(token, file, tmp);
     expect(downloaded.readAsStringSync(), 'file body');
 
