@@ -108,3 +108,13 @@ To verify for yourself: every script is a plain text file in this repository: `s
 | No balloon for a pairing request | Windows may have notifications or Focus Assist turned off: open the tray menu instead, "Pending approvals" appears there |
 | Start with Windows stopped working after moving the project | run `--uninstall-autostart`, then `--install-autostart` again from the new location |
 | A new certificate warning on the phone | the laptop's certificate was recreated (state folder deleted): on the phone choose "Forget and pair again" |
+
+## Troubleshooting: no tray icon, no notifications
+
+| Cause | What to do |
+|---|---|
+| FlashPush was started **headless** (`npm run start:headless`) | Stop it and run `npm start` (the tray mode). Headless has no tray and no balloons by design. |
+| FlashPush is **already running** (for example a headless copy or one started earlier) | A second `npm start` detects the running instance, opens its page and exits without a tray. Stop the running one first (Stop FlashPush in its tray menu, or end the `node.exe` running `src/cli.js`), then start again. |
+| Windows **hides tray icons** | Click the ^ next to the clock; drag the FlashPush icon out to keep it visible. |
+| **Antivirus blocked** the tray script | The tray is `server/tray/tray.ps1` (plain text, read it first). See [dev-safety.md](dev-safety.md); allow it only after reviewing it. |
+| The **site is open** | By design no balloon appears while an admin page is open (the page shows new items live). Close the tab and send again. |

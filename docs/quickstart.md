@@ -10,7 +10,7 @@ npm install
 npm start
 ```
 
-`npm start` runs the server **with the tray icon**. The first time, Windows asks whether to allow Node.js through the firewall: choose **Private networks**. (Prefer no tray? `npm run start:headless`.)
+`npm start` runs the server **with the tray icon** (look in the hidden icons area, the ^ next to the clock). Notifications for what your phone sends only exist in this mode: `npm run start:headless` has no tray and no balloons, and if FlashPush is already running, a second start only opens the site. The first time, Windows asks whether to allow Node.js through the firewall: choose **Private networks**. (Prefer no tray? `npm run start:headless`.)
 
 Open the address it prints, `http://127.0.0.1:8760`. That is the admin page (this laptop only): Dashboard, Approvals, Devices.
 

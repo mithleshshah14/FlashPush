@@ -255,3 +255,10 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Cause | the connect intent was only in memory, so after an app restart or a reinstall the laptop showed "paired, not connected" and only the Wi-Fi icon was green | user observation: after pairing both icons should be green |
 | Fix | remember the laptop the user asked to connect (`activeLaptopId`); reconnect it at app start when auto-reconnect is on; clear it on Disconnect, Forget or connecting another laptop | matches spec 6.2 ("keeps the intent unless the user pressed Disconnect") which the first implementation only honoured while the app process lived |
 | Not resumed | with auto-reconnect off; a laptop that was never connected | respects the setting; no surprise connections |
+
+## 2026-09-22 — no "Paired" word next to the icons; tray troubleshooting (user feedback)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Device row status word | removed for paired laptops; kept only for "Not paired" and "Identity changed" | "Paired" beside a grey link icon looked like a contradiction; the icons already show reachability and connection; words only where the user must act |
+| Tray troubleshooting | documented in `docs/setup.md` and the quickstart | the user saw no tray and no balloon because the running server was a headless copy started by the assistant; headless and "already running" are now spelled out |

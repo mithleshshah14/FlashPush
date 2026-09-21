@@ -28,8 +28,8 @@ void main() {
     expect(find.text('MITHLESH-PC'), findsOneWidget);
     expect(find.text('Studio-Laptop'), findsOneWidget);
     expect(find.text('Office-Desktop'), findsOneWidget);
-    expect(find.text('Paired'), findsNWidgets(2));
-    expect(find.text('Not paired'), findsOneWidget);
+    expect(find.text('Paired'), findsNothing, reason: 'a paired laptop shows only its icons; "Paired" next to a grey link read as a contradiction');
+    expect(find.text('Not paired'), findsOneWidget, reason: 'words only where they are a call to action');
     expect(find.text('Needs approval on the laptop'), findsOneWidget);
     expect(find.byKey(const Key('link-control')), findsNWidgets(3));
     expect(find.textContaining('onnected'), findsNothing, reason: 'no connection words');
