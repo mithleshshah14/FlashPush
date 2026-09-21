@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashPush</title>
+<style>
+  :root {
+    --bg: #f4f5f9; --surface: #ffffff; --text: #1a1c26; --muted: #6b7085; --border: #e3e5ee;
+    --accent: #5b5bf0; --accent-text: #ffffff; --phone: #14a36b; --laptop: #d9822b; --danger: #d64545;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117; --surface: #181b25; --text: #e9ebf3; --muted: #8b91a8; --border: #292d3b;
+      --accent: #7c7cff; --accent-text: #0f1117; --phone: #3dd598; --laptop: #f0a04b; --danger: #ff6b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+  h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  .status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .status.live .dot { background: var(--phone); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .grid { grid-template-columns: 1.6fr 1fr; } }
+
+  textarea { width: 100%; min-height: 90px; resize: vertical; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font: inherit; }
+  textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .hint { font-size: 12px; color: var(--muted); margin-left: auto; }
+  button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 14px; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  button.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  .drop { margin-top: 12px; border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); cursor: pointer; }
+  .drop.over { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .uploads { display: grid; gap: 6px; margin-top: 10px; }
+  .upload { font-size: 13px; }
+  .bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s; }
+
+  .connect { text-align: center; }
+  .qr { width: 200px; max-width: 100%; margin: 0 auto 10px; background: #fff; border-radius: 10px; padding: 6px; }
+  .qr svg { display: block; width: 100%; height: auto; }
+  .urls { font-size: 12px; color: var(--muted); word-break: break-all; text-align: left; }
+  .urls code { display: block; margin-top: 4px; }
+  .note { font-size: 12px; color: var(--muted); margin: 10px 0 0; text-align: left; }
+
+  .feed { display: grid; gap: 10px; }
+  .empty { color: var(--muted); text-align: center; padding: 28px 0; }
+  .item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .badge { font-weight: 600; padding: 2px 8px; border-radius: 99px; color: #fff; }
+  .badge.phone { background: var(--phone); }
+  .badge.laptop { background: var(--laptop); }
+  .body { white-space: pre-wrap; word-break: break-word; }
+  .body a { color: var(--accent); }
+  .file { display: flex; align-items: center; gap: 12px; }
+  .file img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .file .name { font-weight: 600; word-break: break-all; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Flash<span>Push</span></h1>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Send</h2>
+      <textarea id="text" placeholder="Type text or paste a link…" aria-label="Text to send"></textarea>
+      <div class="row">
+        <button class="primary" id="sendText">Send text</button>
+        <span class="hint">Ctrl + Enter to send</span>
+      </div>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose files to send">
+        Drop files here or click to choose
+      </div>
+      <input type="file" id="picker" multiple hidden>
+      <div class="uploads" id="uploads"></div>
+    </section>
+
+    <section class="card connect" id="connect" hidden>
+      <h2>Connect your phone</h2>
+      <div class="qr" id="qr"></div>
+      <div class="urls" id="urls"></div>
+      <p class="note" id="receiveNote"></p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Shared items</h2>
+    <div class="feed" id="feed"></div>
+  </section>
+</main>
+
+<script>
+const TOKEN = '__FLASHPUSH_TOKEN__';
+const $ = (id) => document.getElementById(id);
+const feed = $('feed');
+let items = [];
+
+const q = (path) => `${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(TOKEN)}`;
+const api = (path, opts = {}) => fetch(path, { ...opts, headers: { 'X-Token': TOKEN, ...(opts.headers || {}) } });
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function linkify(text) {
+  return esc(text).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+}
+function fmtSize(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1073741824) return `${(n / 1048576).toFixed(1)} MB`;
+  return `${(n / 1073741824).toFixed(2)} GB`;
+}
+function fmtTime(t) {
+  return new Date(t).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+}
+const isImage = (name) => /\.(png|jpe?g|gif|webp)$/i.test(name);
+
+function render() {
+  if (!items.length) {
+    feed.innerHTML = '<div class="empty">Nothing yet. Send something from your phone or from here.</div>';
+    return;
+  }
+  feed.innerHTML = items.slice().reverse().map((it) => {
+    const dir = it.from === 'phone'
+      ? '<span class="badge phone">From phone</span>'
+      : '<span class="badge laptop">To phone</span>';
+    let body;
+    if (it.kind === 'text') {
+      body = `<div class="body">${linkify(it.text)}</div>`;
+    } else {
+      const thumb = isImage(it.name) ? `<img src="${q('/files/' + it.id + '?inline=1')}" alt="" loading="lazy">` : '';
+      body = `<div class="file">${thumb}<div><div class="name">${esc(it.name)}</div><div class="hint" style="margin:0">${fmtSize(it.size)}</div></div></div>`;
+    }
+    const primary = it.kind === 'text'
+      ? `<button class="small" data-act="copy" data-id="${it.id}">Copy</button>`
+      : `<a href="${q('/files/' + it.id)}" download><button class="small">Download</button></a>`;
+    return `<article class="item" data-id="${it.id}">
+      <div class="meta">${dir}<span>${fmtTime(it.time)}</span></div>
+      ${body}
+      <div class="actions">${primary}<span class="spacer"></span><button class="small danger" data-act="delete" data-id="${it.id}">Delete</button></div>
+    </article>`;
+  }).join('');
+}
+
+feed.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.act === 'delete') {
+    await api(`/api/items/${id}`, { method: 'DELETE' });
+  } else if (btn.dataset.act === 'copy') {
+    const item = items.find((i) => i.id === id);
+    try {
+      await navigator.clipboard.writeText(item.text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = item.text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+  }
+});
+
+// ------------------------------------------------ sending
+
+async function sendText() {
+  const box = $('text');
+  const text = box.value;
+  if (!text.trim()) return;
+  const res = await api('/api/text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, from: 'laptop' }),
+  });
+  if (res.ok) box.value = '';
+}
+$('sendText').addEventListener('click', sendText);
+$('text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendText(); });
+
+function uploadFile(file) {
+  const row = document.createElement('div');
+  row.className = 'upload';
+  row.innerHTML = `<div>${esc(file.name)}</div><div class="bar"><i></i></div>`;
+  $('uploads').appendChild(row);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/file');
+  xhr.setRequestHeader('X-Token', TOKEN);
+  xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name));
+  xhr.setRequestHeader('X-From', 'laptop');
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) row.querySelector('i').style.width = `${(e.loaded / e.total) * 100}%`;
+  };
+  xhr.onload = () => {
+    if (xhr.status === 201) row.remove();
+    else row.firstChild.textContent = `${file.name} — failed (${xhr.status})`;
+  };
+  xhr.onerror = () => { row.firstChild.textContent = `${file.name} — failed`; };
+  xhr.send(file);
+}
+const uploadAll = (files) => [...files].forEach(uploadFile);
+
+const drop = $('drop');
+drop.addEventListener('click', () => $('picker').click());
+drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('picker').click(); } });
+$('picker').addEventListener('change', (e) => { uploadAll(e.target.files); e.target.value = ''; });
+['dragenter', 'dragover'].forEach((ev) => document.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => document.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+document.addEventListener('drop', (e) => { if (e.dataTransfer && e.dataTransfer.files.length) uploadAll(e.dataTransfer.files); });
+document.addEventListener('paste', (e) => {
+  if (e.clipboardData && e.clipboardData.files.length) uploadAll(e.clipboardData.files);
+});
+
+// ------------------------------------------------ live updates
+
+function setStatus(live) {
+  $('status').classList.toggle('live', live);
+  $('statusText').textContent = live ? 'Live' : 'Reconnecting…';
+}
+
+async function loadAll() {
+  const res = await api('/api/items');
+  if (res.ok) { items = await res.json(); render(); }
+}
+
+function connectEvents() {
+  const es = new EventSource(q('/api/events'));
+  es.onopen = () => { setStatus(true); loadAll(); };
+  es.onerror = () => setStatus(false);
+  es.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'add' && !items.some((i) => i.id === ev.item.id)) items.push(ev.item);
+    if (ev.type === 'delete') items = items.filter((i) => i.id !== ev.id);
+    render();
+  };
+}
+
+async function loadInfo() {
+  const res = await api('/api/info');
+  if (!res.ok) return;
+  const info = await res.json();
+  $('connect').hidden = false;
+  $('qr').innerHTML = info.qr || '<p>No Wi-Fi network found</p>';
+  $('urls').innerHTML = info.urls.length
+    ? 'Or type this in your phone:' + info.urls.map((u) => `<code>${esc(u)}</code>`).join('')
+    : '';
+  $('receiveNote').textContent = `Files from your phone are saved to ${info.receiveDir}`;
+}
+
+render();
+connectEvents();
+loadInfo();
+</script>
+</body>
+</html>
