@@ -18,7 +18,7 @@ async function boot(t, { home = tmpDir(t), limits = {} } = {}) {
   const receiveDir = path.join(home, 'received');
   const app = await createApp({
     home,
-    overrides: { ports: { device: 0, admin: 0, discovery: 0 }, receiveDir, limits: { minFreeDiskBytes: 0, ...limits } },
+    overrides: { bindHost: '127.0.0.1', ports: { device: 0, admin: 0, discovery: 0 }, receiveDir, limits: { minFreeDiskBytes: 0, ...limits } },
     log: () => {},
   });
   const ports = await app.start();
@@ -150,7 +150,7 @@ test('a port that is already taken fails start with EADDRINUSE and leaves nothin
   const first = await boot(t);
   const app = await createApp({
     home: tmpDir(t),
-    overrides: { ports: { device: first.ports.device, admin: 0, discovery: 0 }, receiveDir: path.join(tmpDir(t), 'r') },
+    overrides: { bindHost: '127.0.0.1', ports: { device: first.ports.device, admin: 0, discovery: 0 }, receiveDir: path.join(tmpDir(t), 'r') },
     log: () => {},
   });
   await assert.rejects(app.start(), (e) => e.code === 'EADDRINUSE');

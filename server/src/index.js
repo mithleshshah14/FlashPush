@@ -64,6 +64,9 @@ async function createApp({ home, overrides = {}, log = console.log, readTailscal
     for (const name of names) emitter.on(name, changed);
   }
 
+  // Phones connect from the network, so the device API and discovery listen on every interface.
+  // Tests pass overrides.bindHost = '127.0.0.1' so they never open a socket to the network.
+  const bindHost = overrides.bindHost || '0.0.0.0';
   const lifecycle = new Lifecycle();
   lifecycle.on('change', changed);
   const tracker = createTracker();
@@ -124,11 +127,11 @@ async function createApp({ home, overrides = {}, log = console.log, readTailscal
   async function start({ tolerant = false } = {}) {
     const failures = tolerant ? [] : null;
     try {
-      await bind('device', 'TCP', config.ports.device, () => listen(deviceServer, config.ports.device, '0.0.0.0'), failures);
+      await bind('device', 'TCP', config.ports.device, () => listen(deviceServer, config.ports.device, bindHost), failures);
       await bind('admin', 'TCP', config.ports.admin, () => listen(adminServer, config.ports.admin, '127.0.0.1'), failures);
       if (bound.device) {
         discovery = createDiscovery({ identity, devicePort: bound.device });
-        await bind('discovery', 'UDP', config.ports.discovery, () => discovery.start({ port: config.ports.discovery }), failures);
+        await bind('discovery', 'UDP', config.ports.discovery, () => discovery.start({ port: config.ports.discovery, host: bindHost }), failures);
       }
     } catch (err) {
       await stop({ graceMs: 0 });

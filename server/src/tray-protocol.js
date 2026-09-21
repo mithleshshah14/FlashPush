@@ -86,4 +86,4 @@ function buildMenu({ status, pendingCount, autostart }) {
   };
 }
 
-module.exports = { encode, createLineDecoder, buildMenu, TRAY_ACTIONS };
+module.exports = { encode, createLineDecoder, buildMenu, clean, TRAY_ACTIONS };

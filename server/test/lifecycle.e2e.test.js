@@ -16,6 +16,7 @@ async function boot(t, ports = {}) {
   const app = await createApp({
     home,
     overrides: {
+      bindHost: '127.0.0.1',
       ports: { device: 0, admin: 0, discovery: 0, ...ports },
       receiveDir: path.join(home, 'received'),
       limits: { minFreeDiskBytes: 0 },
@@ -29,7 +30,7 @@ async function boot(t, ports = {}) {
 /** Occupies a TCP port so the app cannot bind it. */
 async function occupyPort(t) {
   const blocker = net.createServer();
-  await new Promise((resolve) => blocker.listen(0, '0.0.0.0', resolve));
+  await new Promise((resolve) => blocker.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => blocker.close(resolve)));
   return blocker.address().port;
 }
@@ -150,7 +151,7 @@ test('the MagicDNS name reaches the address list served to the admin page', asyn
   const home = tmpDir(t);
   const app = await createApp({
     home,
-    overrides: { ports: { device: 0, admin: 0, discovery: 0 }, receiveDir: path.join(home, 'received') },
+    overrides: { bindHost: '127.0.0.1', ports: { device: 0, admin: 0, discovery: 0 }, receiveDir: path.join(home, 'received') },
     log: () => {},
     readTailscaleName: async () => 'mithlesh-pc.tail1234.ts.net',
   });
