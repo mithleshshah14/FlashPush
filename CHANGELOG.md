@@ -2,6 +2,19 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-09-22
+
+### Added
+- **Stitch designs** (Plan 2, started 2026-09-21): project `FlashPush v2` (`14054862547846302879`) with a shared dark design system, 19 phone screens and 7 laptop-UI screens (dark + light where requested), exported to `docs/design/screens/` (27 PNGs), documented in `docs/design/README.md` and `.stitch/DESIGN.md` (tokens, components, connection-control spec).
+- Phone screens: Devices list (dark, light, empty), add by address, pairing (waiting, approved, denied, expired), problem states (not paired anymore, identity changed), laptop detail with Messages / Images / Files history (plus empty and offline states), New transfer (choose type, text compose), Transfer tab (not connected), Settings. Bottom tabs Devices | Transfer | Settings.
+- Laptop UI: Dashboard (running, degraded, light), Approvals (dark, light), Devices (dark, light).
+
+### Changed
+- Design decisions taken from user review (recorded in `docs/decisions.md`): connection state is two icon buttons (Wi-Fi status + link action) with no status words, green = on / grey = off; tapping a laptop opens a detail screen with history split into Messages / Images / Files and a "New transfer" flow; the Transfer tab is a shortcut to the connected laptop's detail.
+
+### Notes
+- Stitch limitations found and documented: `edit_screens` does not persist, `generate_variants` keeps only the first change and returns one variant per call, listing lags after generation. Superseded iterations remain in the Stitch project (no delete tool) and are listed in `docs/design/README.md`.
+
 ## 2026-09-21
 
 ### Added

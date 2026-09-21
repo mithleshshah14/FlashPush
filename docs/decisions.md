@@ -63,3 +63,15 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | One `expiresAt` deadline per pairing record | replaces the 4-branch expiry check | |
 | `rng` injection, TLS `now`, `CODES` export, `config.json` limits removed | nothing used them (`config.json` still sets ports and the receive folder, e.g. when a port is taken) | spec §2 |
 | **Rejected:** drop TLS/pinning/SAS and rely on Tailscale only | LAN use without Tailscale is a goal, and the design was approved; recorded as considered | |
+
+## 2026-09-22 — Stitch designs (Plan 2)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Phone navigation | Bottom tabs **Devices \| Transfer \| Settings**; tapping a laptop opens a **laptop detail** screen (Messages \| Images \| Files) with a `New transfer` action; Transfer tab is a shortcut to the connected laptop's detail | user feedback: history should be separated by type and reachable per laptop |
+| New transfer | bottom sheet "What do you want to send?" (Image / Text / Document) then a compose or picker step | user feedback |
+| Connection state | **two icon buttons, no words**: Wi-Fi (status) and link (action: connect / disconnect); green = on, grey = off; on = solid glyph, off = outlined + slashed; Tailscale route: Wi-Fi grey, link green, "via Tailscale" only as tooltip | user feedback; not colour-only for accessibility; 44–48 dp touch targets |
+| Offline detail screen | history stays readable from the phone's local cache; `New transfer` becomes `Connect to send` | user feedback |
+| Laptop UI | approved as designed; dark and light kept | user feedback |
+| Light theme | derived from the same hues (`#F4F8FF` background, darker mint `#0BB58F`) for the Devices list and the laptop screens | spec §9.1 |
+| Design workflow | one screen per generation call; all changes in the initial prompt; export via `=w780` / `=w2560` | Stitch `edit_screens` does not persist and variants keep only the first change (`docs/design/README.md`) |
