@@ -281,3 +281,12 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | "Only PRs, no direct changes" | already how a public repo behaves for strangers (they cannot push); reinforced with `CODEOWNERS`, `CONTRIBUTING.md`, `SECURITY.md`, PR template and the GitHub settings in `docs/repo-security.md` (branch rules, review required, no force pushes, secret scanning and push protection) | requested |
 | "Nobody should clone it" | cannot be done on a public repository; needs a private repository (which also removes stars, forks and outside PRs) or a public repo containing only what is meant to be public | GitHub has no read-only-for-PRs-but-not-cloneable mode |
 | Author email | every commit carries the author's git email; use GitHub's noreply address going forward; rewriting history is left to the owner | not a secret in files, but public metadata |
+
+## 2026-09-22 — repository protections applied on GitHub
+
+| Decision | Choice | Why |
+|---|---|---|
+| Branch protection | `main` and `develop`: PR + 1 approval + code owners, no force push, no deletion, owner may bypass; `feature/*` unprotected | outsiders can only propose changes through pull requests from forks; a solo owner must still be able to merge |
+| Other settings | private vulnerability reporting on, Dependabot alerts on, wiki/projects off; secret scanning and push protection were already on | requested hardening of the public repository |
+| Not changed | visibility stays public, forking and issues stay on | the goal was "fork, star and PRs are fine" |
+| Follow-up | merge the feature branch into `develop` and `main` by pull request so the policy files become active | GitHub reads them from the default branch |

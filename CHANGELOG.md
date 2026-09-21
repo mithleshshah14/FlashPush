@@ -127,6 +127,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - **Full-history audit: no secrets, no sensitive file names, no personal data in files** (546 files, 106 commits, all refs); mobile-specific files (keystores, `key.properties`, `local.properties`, `google-services.json`, APKs) were never committed.
 - Added: wider `.gitignore` for secrets and keys, `scripts/audit-secrets.py`, `.githooks/pre-push`, `SECURITY.md`, `CONTRIBUTING.md`, `.github/CODEOWNERS`, a pull request template and `docs/repo-security.md` (what public means, the GitHub settings to switch on, the accepted exposure of commit author emails and sample names).
 
+### Security (applied on GitHub)
+- Branch protection on `main` and `develop` (PR + 1 approval + code owners, no force push, no deletion, owner bypass), private vulnerability reporting, Dependabot alerts, wiki and projects off; verified by reading the settings back. Details and how to reproduce: `docs/repo-security.md`.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).
