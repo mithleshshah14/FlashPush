@@ -262,3 +262,12 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 |---|---|---|
 | Device row status word | removed for paired laptops; kept only for "Not paired" and "Identity changed" | "Paired" beside a grey link icon looked like a contradiction; the icons already show reachability and connection; words only where the user must act |
 | Tray troubleshooting | documented in `docs/setup.md` and the quickstart | the user saw no tray and no balloon because the running server was a headless copy started by the assistant; headless and "already running" are now spelled out |
+
+## 2026-09-22 — push to the feature branch
+
+| Decision | Choice | Why |
+|---|---|---|
+| What was pushed | the whole of local `develop` (all merged v2 work: server, Windows shell, laptop UI, Android app, designs, docs, safety guard, fixes from the first phone run) as a fast-forward of `origin/feature/v2-pairing-autostart-tailscale` (no force) | requested: push everything to the feature branch |
+| Not pushed | `origin/main` and `origin/develop` stay as they were until the owner decides to merge | the feature branch is the review point |
+| Pre-push check | no key or token files, no tracked file over 2 MB, no token-like strings | nothing sensitive goes public |
+| Next | more laptop-side changes tomorrow, each on its own `feature/*` branch from `develop` | branching rule |
