@@ -22,7 +22,7 @@ List<int> here({String id = 'laptop-1', String name = 'MITHLESH-PC', Object port
     utf8.encode(jsonEncode({'t': 'FLASHPUSH_HERE', 'v': v, 'laptopId': id, 'name': name, 'port': port}));
 
 Future<List<DiscoveredLaptop>> scan(RawDatagramSocket server) =>
-    scanForLaptops(targets: [InternetAddress.loopbackIPv4], port: server.port, window: const Duration(milliseconds: 200));
+    scanForLaptops(targets: [InternetAddress.loopbackIPv4], port: server.port, window: const Duration(milliseconds: 200), bindAddress: InternetAddress.loopbackIPv4);
 
 void main() {
   group('scanForLaptops', () {

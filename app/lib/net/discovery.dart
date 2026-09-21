@@ -44,8 +44,9 @@ Future<List<DiscoveredLaptop>> scanForLaptops({
   List<InternetAddress>? targets,
   int port = discoveryPort,
   Duration window = const Duration(seconds: 2),
+  InternetAddress? bindAddress,
 }) async {
-  final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+  final socket = await RawDatagramSocket.bind(bindAddress ?? InternetAddress.anyIPv4, 0);
   try {
     socket.broadcastEnabled = true;
     final found = <String, DiscoveredLaptop>{};

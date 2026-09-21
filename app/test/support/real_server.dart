@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-/// The real laptop server (`server/src/index.js`) on ephemeral ports in a temp folder.
+/// The real laptop server (`server/src/index.js`), loopback only, on ephemeral ports in a temp folder.
 class RealServer {
   RealServer._(this._process, this._dir, this.devicePort, this.adminPort, this.discoveryPort, this.receiveDir);
 
@@ -22,12 +22,10 @@ class RealServer {
     }
     final dir = await Directory.systemTemp.createTemp('flashpush-it-');
     final receive = Directory('${dir.path}${Platform.pathSeparator}received')..createSync();
-    File('${dir.path}${Platform.pathSeparator}config.json').writeAsStringSync(jsonEncode({
-      'ports': {'device': 0, 'admin': 0, 'discovery': 0},
-    }));
+    // loopback_server.js runs the real server with every listener on 127.0.0.1 only.
     final process = await Process.start(
       'node',
-      ['../server/src/index.js'],
+      ['test/support/loopback_server.js'],
       environment: {'FLASHPUSH_HOME': dir.path, 'RECEIVE_DIR': receive.path},
     );
     final output = StringBuffer();
@@ -77,6 +75,7 @@ class RealServer {
   }
 
   Future<void> stop() async {
+    await _process.stdin.close(); // the launcher shuts the server down when its stdin ends
     _process.kill();
     await _process.exitCode.timeout(const Duration(seconds: 5), onTimeout: () => -1);
     try {
