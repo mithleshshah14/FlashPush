@@ -51,6 +51,10 @@ The Android app in `app/` is the v2 app (see [`app/README.md`](app/README.md)); 
 
 Everything lives in [`docs/`](docs/README.md): the design spec, the reasoning behind each decision, and (as they are written) the protocol, pairing, security, setup and testing guides. [`CHANGELOG.md`](CHANGELOG.md) records what changed on each working day.
 
+## License
+
+Copyright (C) 2026 Mithlesh Shah. FlashPush is free software released under the **GNU General Public License, version 3** (see [LICENSE](LICENSE)): you may use, study, change and share it, and if you distribute a modified version you must release its source under the same license. Third-party libraries keep their own licenses.
+
 ## Contributing and security
 
 Changes come in as pull requests from forks: see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately: [SECURITY.md](SECURITY.md). The repository is public, so it is scanned for secrets before every push: [docs/repo-security.md](docs/repo-security.md).

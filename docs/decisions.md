@@ -290,3 +290,22 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Other settings | private vulnerability reporting on, Dependabot alerts on, wiki/projects off; secret scanning and push protection were already on | requested hardening of the public repository |
 | Not changed | visibility stays public, forking and issues stay on | the goal was "fork, star and PRs are fine" |
 | Follow-up | merge the feature branch into `develop` and `main` by pull request so the policy files become active | GitHub reads them from the default branch |
+
+## 2026-09-22 — approvals relaxed for a solo maintainer (user question)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Required approval on `main` / `develop` | removed: PR still required, 0 approvals, no code-owner requirement; force pushes and deletions still blocked | one maintainer cannot approve their own PR, so the rule only forced an owner bypass; outsiders are stopped by having no write access, not by approvals |
+| Revisit when | a collaborator with write access is added | then require approvals again |
+| Squash merges | the first feature was squash-merged; its 112-commit history is kept on the feature branch | keep the branch, or use merge commits |
+| Local branches | local `develop` and `main` were reset/fast-forwarded to GitHub after verifying identical content and that the detailed history is on the pushed feature branch | keep local and remote aligned after squash merges |
+
+## 2026-09-22 — license: GNU GPL v3 (user decision)
+
+| Decision | Choice | Why |
+|---|---|---|
+| License | **GPL-3.0** (`LICENSE` is the unmodified official text; SPDX `GPL-3.0-only` in `server/package.json`) | requested; anyone may use and change FlashPush, but a distributed derivative must stay open source, so it cannot be repackaged as a closed product |
+| Contributions | a pull request means the contribution is licensed under GPL v3 too (stated in `CONTRIBUTING.md`) | inbound = outbound, no separate agreement needed |
+| "only" vs "or later" | `GPL-3.0-only`; changing to `GPL-3.0-or-later` later is possible while the owner holds the copyright | keeps exactly the version the owner chose |
+| Dependencies | Flutter/Dart packages (BSD/MIT/Apache) and `selfsigned` (MIT) are compatible with GPL v3 and keep their own licenses | no conflict |
+| 2FA | enabled on the owner account (confirmed by the owner) | account security for a public repository |

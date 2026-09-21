@@ -8,7 +8,7 @@
     "start:headless": "node src/cli.js --no-tray",
     "test": "node --import ./test/guard.js --test \"test/**/*.test.js\""
   },
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "selfsigned": "^5.5.0"
   },
