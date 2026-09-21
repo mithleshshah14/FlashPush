@@ -1,0 +1,9 @@
+# Every change needs the maintainer's review (used with "Require review from Code Owners" in branch protection).
+*                @mithleshshah14
+
+# Security-sensitive areas are always reviewed by the maintainer, even if the rule above changes later.
+/server/src/      @mithleshshah14
+/scripts/         @mithleshshah14
+/.github/         @mithleshshah14
+/.githooks/       @mithleshshah14
+/docs/security.md @mithleshshah14

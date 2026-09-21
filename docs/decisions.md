@@ -271,3 +271,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Not pushed | `origin/main` and `origin/develop` stay as they were until the owner decides to merge | the feature branch is the review point |
 | Pre-push check | no key or token files, no tracked file over 2 MB, no token-like strings | nothing sensitive goes public |
 | Next | more laptop-side changes tomorrow, each on its own `feature/*` branch from `develop` | branching rule |
+
+## 2026-09-22 — the repository is public: secrets audit and contribution model (user concern)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Audit | scanned every file in every commit on all refs (546 files, 106 commits) for private keys, tokens, API keys, signing passwords, sensitive file names, personal data and image metadata: nothing found | a public repository publishes its whole history |
+| Guards | wider `.gitignore` (keys, keystores, `key.properties`, `local.properties`, `.env*`, `google-services.json`, APK/AAB, state files), `scripts/audit-secrets.py`, a pre-push hook, a PR template checklist | make a leak fail loudly instead of relying on care |
+| "Only PRs, no direct changes" | already how a public repo behaves for strangers (they cannot push); reinforced with `CODEOWNERS`, `CONTRIBUTING.md`, `SECURITY.md`, PR template and the GitHub settings in `docs/repo-security.md` (branch rules, review required, no force pushes, secret scanning and push protection) | requested |
+| "Nobody should clone it" | cannot be done on a public repository; needs a private repository (which also removes stars, forks and outside PRs) or a public repo containing only what is meant to be public | GitHub has no read-only-for-PRs-but-not-cloneable mode |
+| Author email | every commit carries the author's git email; use GitHub's noreply address going forward; rewriting history is left to the owner | not a secret in files, but public metadata |
