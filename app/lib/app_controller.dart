@@ -41,6 +41,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     required this.cache,
     required this.apiFor,
     required this.discovery,
+    this.pairingWait,
   });
 
   final LaptopStore store;
@@ -48,6 +49,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   final HistoryCache cache;
   final ApiFactory apiFor;
   final DiscoveryController discovery;
+
+  /// How the pairing flow waits between polls (a test seam; real timers by default).
+  final Future<void> Function(Duration)? pairingWait;
 
   final Map<String, LaptopConnection> _connections = {};
   late String _deviceId;
@@ -154,7 +158,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// A pairing attempt against [host]:[port] (a discovered laptop or an address typed by the user).
   PairingFlow beginPairing(String host, int port) =>
-      PairingFlow(api: apiFor(host, port, null), deviceId: _deviceId, deviceName: settings.phoneName);
+      PairingFlow(api: apiFor(host, port, null), deviceId: _deviceId, deviceName: settings.phoneName, wait: pairingWait);
 
   /// Saves an approved pairing and connects at once. A re-pair replaces the old credentials.
   Future<LaptopConnection> finishPairing(PairingApproved approved) async {
