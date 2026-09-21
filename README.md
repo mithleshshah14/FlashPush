@@ -6,8 +6,10 @@ Send text, links and files between your Android phone and your Windows laptop, o
 
 | Part | State |
 |---|---|
-| v1 prototype (shared token + QR code, plain HTTP) | working, being replaced |
-| v2 (device pairing, approval on the laptop, HTTPS, tray + autostart, Tailscale) | design written, implementation not started |
+| v1 prototype (shared token + QR code, plain HTTP) | server part removed; the old Android app is being replaced |
+| v2 server (pairing, approval, HTTPS, per-phone history, transfers, discovery, admin API) | **built and tested** (169 tests) |
+| v2 Android app (pairing, discovery, Messages/Images/Files, Tailscale-aware reconnect) | **built and tested** (170 tests); real-device checks pending, see `docs/testing.md` |
+| Stitch-designed laptop UI, Windows tray + autostart | designed; being built |
 
 v2 is designed in [`docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md`](docs/superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md).
 
@@ -31,9 +33,9 @@ FlashPush/
   CHANGELOG.md  what changed, day by day
 ```
 
-## Try the v1 prototype
+## Run the laptop side (v2 server)
 
-Laptop (Node.js 18+):
+Node.js 22 or newer:
 
 ```
 cd server
@@ -41,13 +43,17 @@ npm install
 npm start
 ```
 
-Open http://localhost:8765, then on the phone (`cd app && flutter run`, USB debugging on) tap **Scan QR code**. Allow Node.js through Windows Firewall on **Private networks** when prompted.
+Open the address it prints (`http://127.0.0.1:8760`, this laptop only) to approve phones, send text and files, and manage devices. Run the one-time firewall step, and see the tray icon and start-with-Windows options, in [`docs/setup.md`](docs/setup.md). Details: [`server/README.md`](server/README.md). Tests: `cd server && npm test`.
 
-Files from the phone are saved to `Downloads/FlashPush`.
+The Android app in `app/` is the v2 app (see [`app/README.md`](app/README.md)); the remaining plans are listed in [`docs/superpowers/plans/2026-09-21-v2-plan-index.md`](docs/superpowers/plans/2026-09-21-v2-plan-index.md).
 
 ## Documentation
 
 Everything lives in [`docs/`](docs/README.md): the design spec, the reasoning behind each decision, and (as they are written) the protocol, pairing, security, setup and testing guides. [`CHANGELOG.md`](CHANGELOG.md) records what changed on each working day.
+
+## Contributing and security
+
+Changes come in as pull requests from forks: see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately: [SECURITY.md](SECURITY.md). The repository is public, so it is scanned for secrets before every push: [docs/repo-security.md](docs/repo-security.md).
 
 ## Branching and workflow
 

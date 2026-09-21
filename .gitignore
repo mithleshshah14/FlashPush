@@ -7,3 +7,24 @@ server/data/
 Thumbs.db
 .idea/
 .vscode/
+
+# Secrets and keys: never commit these (the history of a public repository is public forever)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+key.properties
+local.properties
+google-services.json
+GoogleService-Info.plist
+*.apk
+*.aab
+
+# FlashPush runtime state (identity, certificate, paired devices, history) lives in %APPDATA%\FlashPush, not in the repo
+identity.json
+devices.json
+items.json
