@@ -44,6 +44,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - **End-to-end test over real TLS** (pair with matching codes, phone and laptop text and files, disconnect/reconnect, revoke, phone isolation, admin guard, UDP discovery, restart keeps certificate and pairing, clean stop, port in use). Server suite: **169 tests, all passing**.
 - Docs: `architecture.md`, `security.md`, admin API and discovery in `protocol.md`, `server/README.md`, updated root README.
 
+### Added (antivirus safety)
+- `server/test/guard.js` + `guard.test.js` (loaded by `npm test`): tests can no longer launch PowerShell, VBS hosts, netsh, schtasks and similar; `docs/dev-safety.md` documents the rules and what to do on an alert. Server suite: **174 tests**.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).
