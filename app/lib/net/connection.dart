@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -378,6 +379,29 @@ class LaptopConnection extends ChangeNotifier {
       _listen(_generation, api, token);
     } on Object catch (error) {
       _onLost(_generation, error is ApiException && error.code == 'SESSION_EXPIRED' ? null : error);
+    }
+  }
+
+  final Map<String, Future<File?>> _imageJobs = {};
+
+  /// The cached copy of an image; downloaded once when connected, null when it is not available.
+  Future<File?> imageFile(Item item) {
+    final cached = cache.imageFile(_laptop.id, item.id);
+    if (cached.existsSync()) return Future.value(cached);
+    if (!connected) return Future.value();
+    return _imageJobs[item.id] ??= _download(item).whenComplete(() {
+      _imageJobs.remove(item.id); // a block body: returning the future itself would make it wait on itself
+    });
+  }
+
+  Future<File?> _download(Item item) async {
+    try {
+      final temp = await withSession((api, token) async => api.download(token, item, await cache.scratch()));
+      final stored = await cache.storeImage(_laptop.id, item.id, temp);
+      await temp.delete();
+      return stored;
+    } on Object {
+      return null; // the grid shows a placeholder; opening the image again retries
     }
   }
 

@@ -46,6 +46,9 @@ class HistoryCache {
     return write;
   }
 
+  /// A folder for downloads that are about to be copied elsewhere (cache or Downloads).
+  Future<Directory> scratch() => Directory('${root.path}${Platform.pathSeparator}tmp').create(recursive: true);
+
   File imageFile(String laptopId, String itemId) {
     if (!_safeId.hasMatch(itemId)) throw ArgumentError('Unsafe id');
     return File('${_dir(laptopId).path}${Platform.pathSeparator}images${Platform.pathSeparator}$itemId');

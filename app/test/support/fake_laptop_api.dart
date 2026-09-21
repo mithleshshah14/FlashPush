@@ -27,6 +27,7 @@ class FakeNetwork {
 
   int helloCalls = 0;
   int connectCalls = 0;
+  int downloadCalls = 0;
   final List<String> disconnected = [];
   final List<String> forgotten = [];
   final List<String> sentTexts = [];
@@ -134,6 +135,7 @@ class FakeLaptopApi implements LaptopApi {
 
   @override
   Future<File> download(String token, Item item, Directory dir, {Progress? onProgress}) async {
+    network.downloadCalls++;
     final file = File('${dir.path}${Platform.pathSeparator}${item.id}');
     await file.writeAsBytes([1, 2, 3]);
     return file;

@@ -34,3 +34,24 @@ class Unreachable implements Exception {
   @override
   String toString() => 'Unreachable';
 }
+
+/// A short, friendly explanation for a failed action. Branches on error codes, never on messages.
+String userMessage(Object error) {
+  if (error is NotConnected) return 'Connect to the laptop first.';
+  if (error is Unreachable) return 'Could not reach the laptop.';
+  if (error is CertificateChanged) return 'The laptop identity changed. Pair again to continue.';
+  if (error is ApiException) {
+    switch (error.code) {
+      case 'PAYLOAD_TOO_LARGE':
+        return 'That is too large to send.';
+      case 'INSUFFICIENT_STORAGE':
+      case 'STORAGE_QUOTA':
+        return 'The laptop has no room for that.';
+      case 'RATE_LIMITED':
+        return 'The laptop is busy. Try again in a moment.';
+      case 'DEVICE_NOT_PAIRED':
+        return 'The laptop no longer knows this phone.';
+    }
+  }
+  return 'Something went wrong. Try again.';
+}
