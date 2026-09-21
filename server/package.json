@@ -2,10 +2,11 @@
   "name": "flashpush-server",
   "version": "1.0.0",
   "description": "Send text, links and files between your phone and laptop over the same Wi-Fi",
-  "main": "src/index.js",
+  "main": "src/cli.js",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "node --test \"test/**/*.test.js\""
+    "start": "node src/cli.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "start:headless": "node src/cli.js --no-tray"
   },
   "license": "MIT",
   "dependencies": {

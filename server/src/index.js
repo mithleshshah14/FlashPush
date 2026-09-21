@@ -150,36 +150,4 @@ async function createApp({ home, overrides = {}, log = console.log, readTailscal
   return { start, stop, ports, config, identity, fingerprint: tls.fingerprint, devices, sessions, pairing, store, lifecycle, bus };
 }
 
-function explain(err, config) {
-  if (err.code === 'EADDRINUSE') {
-    return `Port ${err.port} is already in use by another program. Set another in ${config.paths.config} (for example {"ports":{"device":9000}}).`;
-  }
-  return err.message;
-}
-
-async function main() {
-  const app = await createApp();
-  try {
-    await app.start();
-  } catch (err) {
-    console.error(`FlashPush could not start: ${explain(err, app.config)}`);
-    process.exit(1);
-  }
-  const p = app.ports();
-  console.log(`FlashPush is running.
-  Admin page (this laptop only): http://127.0.0.1:${p.admin}
-  Phones connect over HTTPS on port ${p.device}; discovery listens on UDP ${p.discovery}
-  Received files are saved to: ${app.config.receiveDir}`);
-  const shutdown = () => app.stop().then(() => process.exit(0));
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-}
-
-if (require.main === module) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
-}
-
 module.exports = { createApp };
