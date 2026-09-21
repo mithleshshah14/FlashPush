@@ -156,3 +156,7 @@ UDP `8766`. A phone broadcasts `{"t":"FLASHPUSH_DISCOVER","v":1}` (under 512 byt
 ```
 
 At most 20 probes per 10 seconds are answered per source address. The reply is a **hint only**: the phone must still verify the laptop through TLS pinning (and, on first contact, the pairing code).
+
+## Static files (admin server)
+
+Besides the API, the admin server answers `GET /` with the admin UI and `GET /assets/...` with its files. Only files found under `server/public/` when the server started are served (`index.html` at `/`, everything else under `assets/` with the extensions `.js .css .png .ico .webp .html`); any other path is `404 NOT_FOUND`. The page carries a strict CSP, see [security.md](security.md).

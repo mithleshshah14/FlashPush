@@ -135,3 +135,18 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
 | Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
 | v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |
+
+## Plan 4 - laptop web UI
+
+| Decision | Choice | Why |
+|---|---|---|
+| Stack | plain HTML, CSS, ES modules; no framework, no build step, no dependency | nothing to maintain or attack; the pages are small |
+| Serving files | in-memory allowlist read at start-up, Map lookup per request | traversal is impossible by construction, not by string checks |
+| CSP | no `unsafe-inline` for scripts or styles | the temporary page needed it; the real UI does not, so XSS gets no foothold |
+| DOM building | `createElement` + `textContent` only; enforced by a source test | messages and file names come from phones |
+| Pure logic in `model.js` | formatting and view models are DOM-free and unit-tested in Node | the browser code stays thin |
+| Live updates | keep the server's "changed, then refetch" model | no replay logic; same as the phone API |
+| Fonts | named but not bundled; system fonts fall back | no external requests, no font licences to carry |
+| Theme | dark default, follows the OS in light, manual toggle remembered in `localStorage` (guarded) | design shows both; storage may be blocked |
+| Logo | the app icon as a small PNG with transparent corners | the icon's black corners are painted pixels (see the icon decision) |
+| Demo/screenshots | demo mounts only the admin API on 127.0.0.1; no HTTPS or UDP listener | tooling must never expose anything to the network |

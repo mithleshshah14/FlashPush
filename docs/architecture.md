@@ -34,7 +34,8 @@ Ports can be changed in `config.json` (`{"ports":{"device":9000}}`) when another
 | `transfers.js` | safe streamed uploads |
 | `http.js` | JSON in/out, error envelope, router, SSE, file streaming |
 | `deviceApi.js` | the phone-facing `/v1` routes |
-| `adminApi.js` + `public/admin.html` | loopback admin routes and the (temporary) page |
+| `adminApi.js` | loopback admin routes; also serves the UI files from the allowlist |
+| `static.js` + `public/` | in-memory allowlist of the admin UI files (`index.html`, `assets/*`), served with the strict CSP; see [admin-ui.md](admin-ui.md) |
 
 Dependencies only point downwards: the two APIs depend on the stores and helpers; the stores never depend on HTTP.
 
@@ -78,3 +79,7 @@ Idempotent: stop the timers, end all sessions (`shutdown`), close all event stre
 ## What is not here yet
 
 Windows tray, notifications, autostart, start-up degraded state (Plan 5); the Stitch-designed admin UI (Plan 4); the Android app (Plan 3); Tailscale name resolution and the phone's address race (Plan 6).
+
+## Admin UI (Plan 4)
+
+`server/public/` holds the laptop web UI: plain HTML, CSS and ES modules, no build step. At start-up `static.js` reads `index.html` and everything under `assets/` (known extensions only) into a `Map` keyed by URL path; the admin handler answers `GET` requests by looking the path up in that map, so a URL can never become a file path. The page talks to the admin API only (same origin) and refreshes on the `changed` event. Details: [admin-ui.md](admin-ui.md).

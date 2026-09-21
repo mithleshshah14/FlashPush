@@ -58,3 +58,12 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - Server API exercised with curl: token check (401), text and file upload, path-traversal filename sanitizing, download, loopback web UI.
 - App: `flutter analyze` clean, 3 unit tests pass, debug APK builds.
 - Not tested on a real phone yet.
+
+## 2026-09-22 (laptop UI branch)
+
+### Built (Plan 4)
+- The real laptop web UI replaces the temporary admin page: **Dashboard**, **Approvals**, **Devices**, dark and light, 360 to 1440 px, live updates, offline banner, aria-live announcements for new pairing requests, confirmations via `<dialog>`, per-file upload progress, image thumbnails, firewall help panel.
+- `server/src/static.js`: allowlisted in-memory static files; the page and assets are served with a strict CSP (no `unsafe-inline`).
+- Client code split into small modules (`model`, `api`, `live`, `theme`, `dom`, `shell`, `widgets`, three views). Tests: static-file allowlist and traversal, pure model, API/theme/live with stubs, and source rules (no `innerHTML`, no inline code, no external URLs). Server suite: **204 tests, all passing**.
+- Tools: a loopback-only demo server and a screenshot script; screenshots in `docs/design/implemented/`; `scripts/make-favicon.ps1` builds the favicon from `app_icon.png`.
+- Docs: `docs/admin-ui.md`, additions to architecture, security, decisions, docs index and server README.

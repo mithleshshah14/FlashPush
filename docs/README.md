@@ -8,7 +8,9 @@
 | [FlashPush_v2_design_review_suggestions.md](FlashPush_v2_design_review_suggestions.md) | external review of the spec; triage in decisions.md | input |
 | [pairing.md](pairing.md) | exact pairing crypto, message flow, limits and test vectors | written (Plan 1A) |
 | [architecture.md](architecture.md) | listeners, modules, state on disk, start-up and shutdown | written (Plan 1B-ii-b) |
+| [admin-ui.md](admin-ui.md) | laptop web UI: views, API use, theme, accessibility, security rules, screenshots | written (Plan 4) |
 | [security.md](security.md) | threats and protections, what is not protected, review checklist | written (Plan 1B-ii-b) |
+| [design/implemented/](design/implemented/) | screenshots of the built laptop UI (dark/light, desktop/mobile) | written (Plan 4) |
 | [protocol.md](protocol.md) | device API, admin API and UDP discovery reference | written (Plans 1B-ii-a/b) |
 | [transfers.md](transfers.md) | file lifecycle, limits, path safety, retention, per-phone history | written (Plan 1B-i) |
 | connection-state.md | phone/laptop state machines and reconnect rules | written during implementation |

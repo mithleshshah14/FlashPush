@@ -55,3 +55,16 @@ The admin API defends against **browsers** (cross-site requests, rebinding, fram
 ## Reporting
 
 This is a personal project; open an issue on the repository, or contact the maintainer directly for anything security related.
+
+## Admin UI: CSP and static files (Plan 4)
+
+| Rule | How it is enforced |
+|---|---|
+| Page CSP without `unsafe-inline` | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`, plus `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `nosniff`; asserted in `static.test.js` |
+| Only allowlisted files are served | `loadPublicFiles` reads the files once; requests are Map lookups. Tests try `../`, `%2e%2e`, `%2f`, `%5c`, `%00`, directories, other extensions, `/index.html`, files next to the page |
+| Assets are read-only and guarded | non-GET is not routed; the Host / Origin / Sec-Fetch-Site guard applies to assets too |
+| No HTML from data, no inline code | `ui-sources.test.js` fails the build on `innerHTML`, `eval`, inline scripts/styles/handlers and external URLs |
+| Links from shared text | only exact `http(s)` URLs, `rel="noopener noreferrer"`; `javascript:` and `data:` never become links |
+| Images | thumbnails come from `?inline=1`, which the server never allows for SVG |
+
+Review checklist addition for UI changes: does the change need an inline script or style, an external request, or HTML built from data? If yes, redesign it.
