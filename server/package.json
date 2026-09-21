@@ -1,0 +1,13 @@
+{
+  "name": "flashpush-server",
+  "version": "1.0.0",
+  "description": "Send text, links and files between your phone and laptop over the same Wi-Fi",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
