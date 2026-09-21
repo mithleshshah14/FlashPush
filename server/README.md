@@ -1,6 +1,6 @@
 # FlashPush server (laptop side)
 
-Node.js server that phones connect to over HTTPS to send and receive text, links and files. Runs on Windows (the tray icon and autostart arrive in a later plan); the core also runs on macOS/Linux.
+Node.js server that phones connect to over HTTPS to send and receive text, links and files. Runs on Windows with a tray icon and optional start with Windows; the core also runs on macOS/Linux (`npm run start:headless`).
 
 ## Run
 
@@ -9,14 +9,27 @@ Requires Node.js 22 or newer.
 ```
 cd server
 npm install
-npm start
+npm start                 # server + tray icon (Windows)
+npm run start:headless    # server only
 ```
 
-It prints the admin page address (`http://127.0.0.1:8760`, this laptop only). Open it to approve phones that want to pair, send text/files to a phone, and manage paired phones and history.
+It prints the admin page address (`http://127.0.0.1:8760`, this laptop only). Open it (or use the tray icon) to approve phones that want to pair, send text/files to a phone, and manage paired phones and history. Starting it a second time just opens the running instance's page.
 
 ```
-npm test        # 169 tests: unit, HTTP API, and end-to-end over real TLS
+npm test        # 269 tests: unit, HTTP APIs, end-to-end over real TLS, and the Windows shell
 ```
+
+The tests never run PowerShell or any script, never touch your Startup folder or firewall, and only listen on `127.0.0.1`; the parts that need the real desktop are a manual checklist in [testing.md](../docs/testing.md).
+
+### Start with Windows
+
+```
+node src\cli.js --install-autostart      # or tick "Start with Windows" in the tray menu
+node src\cli.js --status
+node src\cli.js --uninstall-autostart
+```
+
+Details, the tray menu, and the one-time firewall step: [setup.md](../docs/setup.md).
 
 ## Where things are
 
@@ -38,7 +51,7 @@ If another program uses a port, create `%APPDATA%\FlashPush\config.json`:
 
 ## Windows Firewall
 
-The first start asks whether Node.js may accept connections: allow it on **Private networks**, otherwise phones cannot reach the laptop. Tailscale needs an extra rule (covered with the Windows shell plan).
+Windows blocks incoming connections until you allow them. Run `scripts\allow-firewall.ps1` once in an administrator PowerShell: it opens only TCP 8765 and UDP 8766, and only from your local subnet and Tailscale (`100.64.0.0/10`). Exactly what it does, and how to undo it, is in [setup.md](../docs/setup.md).
 
 ## Pairing a phone
 
@@ -48,4 +61,4 @@ The first start asks whether Node.js may accept connections: allow it on **Priva
 
 ## Documentation
 
-[Architecture](../docs/architecture.md) · [Protocol](../docs/protocol.md) · [Pairing crypto](../docs/pairing.md) · [Security](../docs/security.md) · [Transfers](../docs/transfers.md) · [All docs](../docs/README.md)
+[Setup](../docs/setup.md) · [Testing](../docs/testing.md) · [Architecture](../docs/architecture.md) · [Protocol](../docs/protocol.md) · [Pairing crypto](../docs/pairing.md) · [Security](../docs/security.md) · [Transfers](../docs/transfers.md) · [All docs](../docs/README.md)

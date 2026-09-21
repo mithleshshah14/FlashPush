@@ -2,6 +2,26 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
+
+### Added
+- **Lifecycle:** `starting / running / degraded / stopped`; a taken port makes FlashPush *degraded* with the reason instead of aborting (tolerant start from the CLI); `status` in `GET /admin/state`; graceful stop (finish running transfers for up to 5 s, then cut the rest and delete their `.part` files).
+- **Tray icon** (`server/tray/tray.ps1`, `server/src/tray*.js`, `shell.js`): status line, Open FlashPush, Pending approvals (n), Paired devices, Open received files, Start with Windows, Stop FlashPush; a balloon "*phone* wants to connect, code 482 916" on a new pairing request. Icons generated from a simplified glyph (`server/tray/`).
+- **Start with Windows:** hidden `FlashPush.vbs` launcher in the Startup folder and Start Menu (`--install-autostart`, `--uninstall-autostart`, `--status`, or the tray checkbox); no admin rights, no registry, no scheduled task.
+- **Single instance:** starting FlashPush again opens the running instance's page.
+- **Firewall scripts** (`scripts/allow-firewall.ps1`, `remove-firewall.ps1`): TCP 8765 and UDP 8766 from `LocalSubnet` and `100.64.0.0/10` only.
+- **Tailscale MagicDNS name** in the address list (`{name, kind:'tailscale-name'}`).
+- New entry point `server/src/cli.js` (`npm start`, `npm run start:headless`).
+- Docs: `docs/setup.md` (with antivirus notes), `docs/testing.md` (automated suite and manual Windows checklist); architecture, security and protocol updated.
+
+### Changed
+- `index.js` is now a library; `start()` and `stop()` take options (`tolerant`, `graceMs`); `createApp` accepts `readTailscaleName` and the test-only `overrides.bindHost`.
+- After the user's antivirus flagged the project: the tray no longer compiles code at run time, tests never execute scripts and bind only to `127.0.0.1`, and static tests forbid runtime compilation, encoded commands, downloads, registry and scheduled-task changes and `netsh` in every script.
+
+### Verified
+- `cd server && npm test`: **269 tests, all passing** (up from 169).
+- **Not verified on a real desktop** (by design; see the manual checklist in `docs/testing.md`): the actual tray icon and balloon, sign-in autostart, the firewall rules, and connecting a phone through them.
+
 ## 2026-09-21
 
 ### Added

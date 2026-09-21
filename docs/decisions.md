@@ -135,3 +135,19 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
 | Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
 | v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |
+
+## Plan 5 — Windows shell
+
+| Decision | Choice | Why |
+|---|---|---|
+| Start-up failures | `start({ tolerant: true })` from the CLI only; strict start stays the default for `createApp` | the spec wants a working admin page and a named reason when a port is taken; tests and library users still get a hard failure |
+| Two firewall rules in one group | TCP 8765 and UDP 8766 as separate rules named in group `FlashPush` | a Windows firewall rule holds one protocol |
+| Firewall profile | `-Profile Any` | Tailscale's adapter is often classed as Public; the remote-address scope is what limits the rule |
+| Launcher file | one `.vbs` used for both the Startup folder and the Start Menu (no `.lnk`) | creating a shortcut needs COM or PowerShell; the launcher text is enough, needs no extra script, and is easy to read |
+| Launcher encoding | UTF-16 with byte order mark | WScript reads it correctly for non-ASCII folder names |
+| Tray stdin | a pending `StreamReader.ReadLineAsync()` polled by the UI timer; **no `Add-Type -TypeDefinition`** | runtime C# compilation is a classic heuristic-scanner trigger (the user's antivirus flagged the first version); the polling version compiles nothing |
+| Antivirus safety rules | tests never execute PowerShell, WScript, `netsh` or any script, and only bind `127.0.0.1`; a static test scans every `.ps1` for compilation, encoded commands, downloads, registry, scheduled tasks, `netsh`, other programs | the user's antivirus reacted to project activity; real tray, autostart and firewall checks are manual steps in [testing.md](testing.md) |
+| `bindHost` override | `createApp({ overrides: { bindHost } })`, default `0.0.0.0` | tests must not open sockets on the network; production must (phones connect from it) |
+| Entry point | `cli.js`; `index.js` became a library | one place parses arguments and wires the Windows-only parts, `createApp` stays free of them |
+| MagicDNS | best-effort `tailscale status --json` (2 s timeout), injected reader, refreshed every 60 s | no dependency, no failure when Tailscale is absent |
+| Test helper | temp-folder cleanup retries | a scanner holding a freshly written file open made an unrelated test fail with ENOTEMPTY |

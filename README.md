@@ -42,7 +42,7 @@ npm install
 npm start
 ```
 
-Open the address it prints (`http://127.0.0.1:8760`, this laptop only) to approve phones, send text and files, and manage devices. Allow Node.js through Windows Firewall on **Private networks** when asked. Details: [`server/README.md`](server/README.md). Tests: `cd server && npm test`.
+Open the address it prints (`http://127.0.0.1:8760`, this laptop only) to approve phones, send text and files, and manage devices. Run the one-time firewall step, and see the tray icon and start-with-Windows options, in [`docs/setup.md`](docs/setup.md). Details: [`server/README.md`](server/README.md). Tests: `cd server && npm test`.
 
 The Android app in `app/` is still the v1 prototype and does not work with the v2 server until its plan lands; see [`docs/superpowers/plans/2026-09-21-v2-plan-index.md`](docs/superpowers/plans/2026-09-21-v2-plan-index.md).
 

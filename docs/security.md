@@ -30,6 +30,23 @@ What FlashPush protects, how, and what it does **not** protect. Design: spec §3
 | Duplicate sends on flaky Wi-Fi | `X-Operation-Id` idempotency |
 | Information leaks in errors | unexpected errors become `INTERNAL`; details only in the laptop log; secrets, tokens and request IDs are never logged |
 | Discovery abuse | replies are a small hint, 512-byte input limit, 20 probes per 10 s per source |
+| A script that starts with Windows does more than it says | the launcher is generated from a fixed template from three validated paths (no quotes, `%`, control characters or relative paths), starts only `node.exe`, and tests fail if it gains registry, file, download or shell access |
+| The tray script is fed hostile text | it is static, parses messages as JSON data, only ever compares the message type, sends only fixed ids, and compiles or downloads nothing; menu labels are stripped of control characters and capped |
+| Tray or browser helpers run attacker-chosen commands | programs are started with argument arrays (no shell); the browser is only asked to open `http://127.0.0.1:<port>` and Explorer an absolute drive path |
+| The firewall rule opens too much | two rules only (TCP 8765, UDP 8766) from `LocalSubnet` and `100.64.0.0/10`; a test reads the script and fails if either widens |
+
+## Windows integration (tray, start with Windows, firewall)
+
+Nothing here needs administrator rights except the one-time firewall script, which you run yourself.
+
+| Piece | What it can do | What it cannot do |
+|---|---|---|
+| `server/tray/tray.ps1` | show a tray icon and balloons, send menu clicks | run code it receives, compile code, download, write files, change settings |
+| `FlashPush.vbs` launcher | start `node.exe src\cli.js` hidden | touch the registry, files, other programs, or anything not in its three validated paths |
+| `scripts/allow-firewall.ps1` | add two inbound rules (TCP 8765, UDP 8766) from `LocalSubnet` and `100.64.0.0/10` | open other ports or addresses (a test enforces this) |
+| `scripts/remove-firewall.ps1` | remove the `FlashPush` rule group | anything else |
+
+`node.exe` starts PowerShell with `-ExecutionPolicy Bypass` for that single process because the scripts are unsigned; it changes no policy. Heuristic virus scanners can react to a hidden PowerShell script or a Startup entry: see the antivirus notes in [setup.md](setup.md), and read the scripts (they are plain text). Automated tests never execute these scripts; `server/test/scripts.test.js` scans every `.ps1` and fails on runtime compilation, encoded commands, downloads, registry or scheduled-task changes, `netsh`, or starting other programs.
 
 ## The admin guard is not authentication
 

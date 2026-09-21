@@ -10,6 +10,8 @@
 | [architecture.md](architecture.md) | listeners, modules, state on disk, start-up and shutdown | written (Plan 1B-ii-b) |
 | [security.md](security.md) | threats and protections, what is not protected, review checklist | written (Plan 1B-ii-b) |
 | [protocol.md](protocol.md) | device API, admin API and UDP discovery reference | written (Plans 1B-ii-a/b) |
+| [setup.md](setup.md) | install, tray, start with Windows, firewall rule and its scope, Tailscale, antivirus notes, troubleshooting | written (Plan 5) |
+| [testing.md](testing.md) | automated suite, what tests never do, manual Windows checklist | written (Plan 5) |
 | [transfers.md](transfers.md) | file lifecycle, limits, path safety, retention, per-phone history | written (Plan 1B-i) |
 | connection-state.md | phone/laptop state machines and reconnect rules | written during implementation |
 | [superpowers/plans/2026-09-21-v2-plan-index.md](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans: index of 7 plans, with Plan 1A (server security core) written in full | Plan 1A done (77 tests); 1B next |

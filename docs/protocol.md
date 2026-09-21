@@ -114,6 +114,15 @@ Send a fresh UUID-like value (8–64 characters of letters, digits, `-`, `_`) wi
 
 The laptop remembers the last 200 operations (or 10 minutes) per device. `DELETE` routes and `POST /session` are naturally safe to repeat.
 
+## Address entries
+
+Every `addresses` list (pairing status, session, admin state) is ordered best first and holds two shapes:
+
+| Shape | Meaning |
+|---|---|
+| `{"ip":"192.168.1.6","kind":"lan"}` | an IPv4 address; `kind` is `lan`, `tailscale` (`100.64.0.0/10`) or `other`; link-local `169.254.x.x` is never listed |
+| `{"name":"mithlesh-pc.tail1234.ts.net","kind":"tailscale-name"}` | the laptop's Tailscale MagicDNS name, present only when the `tailscale` command-line tool answers; placed after the LAN addresses and before the Tailscale IP because a name survives IP changes |
+
 ## Limits at a glance
 
 JSON bodies 1 MB · text 1 MB · files 2 GiB · 10 failed auths/min/address · 5 pair requests/min/address · 3 open pairing requests · 20 paired devices · 2 event streams/device.
@@ -134,7 +143,7 @@ Otherwise `403 FORBIDDEN`. Errors use the same envelope as the device API.
 |---|---|---|---|
 | `GET /` | | the admin page (strict CSP, `X-Frame-Options: DENY`) | |
 | `GET /admin/ping` | | `{"app":"flashpush-admin","v":1}` (used to detect a running instance) | |
-| `GET /admin/state` | | `{laptop, addresses, ports, receiveDir, pending[], devices[] (+connected), items[] (+deviceId)}` | |
+| `GET /admin/state` | | `{laptop, addresses, ports, status:{state,reason}, receiveDir, pending[], devices[] (+connected), items[] (+deviceId)}`; `status.state` is `starting`, `running`, `degraded` (with a `reason`) or `stopped` | |
 | `GET /admin/events` | | SSE, event `changed` whenever `state` may have changed | |
 | `POST /admin/pair/:id/approve` | | `{}` | `PAIR_NOT_FOUND`, `PAIR_EXPIRED`, `PAIR_LIMIT` |
 | `POST /admin/pair/:id/deny` | | `{}` | `PAIR_NOT_FOUND`, `PAIR_EXPIRED` |

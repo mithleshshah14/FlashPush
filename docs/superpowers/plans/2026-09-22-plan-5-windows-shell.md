@@ -76,3 +76,14 @@ Create `docs/setup.md`, `docs/testing.md`; update architecture, security, protoc
 
 ## Self-review
 Spec coverage: §8 lifecycle/stop → T1-2; single instance, tray, autostart → T4-6, 8; §5.3 firewall → T7; §5.2 MagicDNS → T3; §12 port in use → T2; §13 manual checklist → T9. Deviations (two firewall rules in one group; `.vbs` doubles as the Start Menu entry) go in the decisions log. `status()` is `{state, reason}` everywhere; tray action ids are shared by `tray-protocol`, `tray`, `shell`.
+
+---
+
+## Implementation notes (as built)
+
+Recorded after execution; the decisions are also in `docs/decisions.md`.
+
+- **Antivirus constraints arrived during execution.** The user's antivirus reacted to project activity, so: no test or verification step executes PowerShell, WScript/CScript or `netsh`; tests only read those files as text, parse the `.ico` files in plain Node, and use fakes; every socket in tests binds `127.0.0.1` (`overrides.bindHost`). Task 5's "real tray starts and exits" test and Task 6's `cscript` test were dropped for this reason and moved to the manual checklist in `docs/testing.md`.
+- **`tray.ps1` compiles no code.** The first version read stdin through `Add-Type -TypeDefinition` (runtime C#), a classic heuristic trigger. It now keeps one `StreamReader.ReadLineAsync()` pending and polls `IsCompleted` from the 100 ms UI timer. `scripts.test.js` forbids `Add-Type` other than `-AssemblyName` and scans every `.ps1` for encoded commands, downloads, registry, scheduled-task and `netsh` use.
+- **Test helpers were not moved** (Task 2 planned to move `boot`/`pair` to `helpers/e2e.js`): `lifecycle.e2e.test.js` has its own small `boot`, so `e2e.test.js` only gained `bindHost`.
+- Task 8 also made `index.js` a library (its old `main` and `explain` were removed; `cli.js` is the entry point).
