@@ -135,3 +135,14 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Sending from the laptop | requires a target phone when several are paired | items belong to one phone |
 | Test HTTP clients | `agent: false` | the default agent keeps sockets alive and hid a real connection-refused check |
 | v1 | `server.js`, its page and `qrcode` removed | the shared-token API cannot coexist with the approval model |
+
+## 2026-09-22 — antivirus safety (Kaspersky alert)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Cause | Kaspersky System Watcher blocked `tray.test.js` (`PDM:Exploit.Win32.Generic`); earlier a leftover demo server listened on all interfaces | behavior heuristics react to node launching PowerShell with `-ExecutionPolicy Bypass`, runtime C# compilation, script hosts and network-wide listeners |
+| Enforcement | `server/test/guard.js`, loaded by `npm test`, makes any test that really launches PowerShell, VBS hosts, netsh, schtasks and similar throw (promisified `execFile` included); `guard.test.js` proves it | a rule that is only written down gets broken by the next generated test |
+| Tray script | must not use `Add-Type -TypeDefinition` (stdin is read with a polled `ReadLineAsync`) | removes runtime compilation, the strongest heuristic trigger |
+| Real scripts | tray, autostart and firewall checks are manual steps for the user | nothing on the machine changes without an explicit step |
+| Test servers | loopback only, stopped when done | no orphaned network-wide listeners |
+| Process | agent-written code is grepped for risky patterns and reviewed before it is run (`docs/dev-safety.md`) | catches the problem before the scanner does |
