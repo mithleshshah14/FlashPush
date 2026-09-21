@@ -6,8 +6,9 @@
 | [decisions.md](decisions.md) | choices made and why | live |
 | [superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md](superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md) | v2 design: pairing, security, autostart/tray, Tailscale (revision 2) | approved 2026-09-21 |
 | [FlashPush_v2_design_review_suggestions.md](FlashPush_v2_design_review_suggestions.md) | external review of the spec; triage in decisions.md | input |
-| pairing.md, connection-state.md, transfers.md | new docs added by the review | written during implementation |
-| [superpowers/plans/2026-09-21-v2-plan-index.md](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans: index of 7 plans, with Plan 1A (server security core) written in full | ready to execute |
+| [pairing.md](pairing.md) | exact pairing crypto, message flow, limits and test vectors | written (Plan 1A) |
+| connection-state.md, transfers.md | phone/laptop state machines; file lifecycle | written during implementation |
+| [superpowers/plans/2026-09-21-v2-plan-index.md](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans: index of 7 plans, with Plan 1A (server security core) written in full | Plan 1A done (77 tests); 1B next |
 | architecture.md | how the pieces fit | written during implementation |
 | protocol.md | full HTTP/UDP protocol reference | written during implementation |
 | security.md | threat model and what is/isn't protected | written during implementation |

@@ -16,6 +16,12 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - Spec revision 2 incorporates an external design review (`docs/FlashPush_v2_design_review_suggestions.md`): pairing proof and exact encodings, one session per device with expiry, re-pair, file limits and path safety, error envelope, idempotency, reconnect rules, retention. Deferrals and reasons are in `docs/decisions.md`.
 - Brand palette sampled from the icon; derived icon assets planned.
 
+### Built (Plan 1A, branch `feature/server-security-core`)
+- Server security core in `server/src/`: `config`, `errors` (error envelope), `fsutil` (atomic JSON), `validate`, `crypto` (commit / SAS / proof primitives), `identity`, `tls` (EC P-256 self-signed certificate + fingerprint), `devices` (hashed secrets, re-pair, remove), `sessions` (one per device, idle 24 h / absolute 7 d), `ratelimit`, `idempotency`, `pairing` (commit-reveal state machine).
+- Written test-first: **77 tests, all passing** (`cd server && npm test`), including the pairing known-answer vectors and a real TLS handshake whose presented fingerprint matches the one the phone will pin.
+- New dependency: `selfsigned`. The v1 `server.js` and web page are untouched until Plan 1B replaces them.
+- `docs/pairing.md` (exact protocol, timings, test vectors).
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

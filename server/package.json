@@ -4,10 +4,15 @@
   "description": "Send text, links and files between your phone and laptop over the same Wi-Fi",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test \"test/**/*.test.js\""
   },
   "license": "MIT",
   "dependencies": {
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "selfsigned": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
