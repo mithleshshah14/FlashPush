@@ -14,10 +14,11 @@ const { PairingManager } = require('./pairing');
 const { ItemStore } = require('./store');
 const { OperationCache } = require('./idempotency');
 const { sweepPartFiles } = require('./transfers');
-const { listAddresses } = require('./addresses');
+const { createAddressProvider } = require('./addresses');
 const { createDiscovery } = require('./discovery');
 const { createDeviceApi } = require('./deviceApi');
 const { createAdminApi } = require('./adminApi');
+const { Lifecycle, listenFailureReason, createTracker } = require('./lifecycle');
 
 function listen(server, port, host) {
   return new Promise((resolve, reject) => {
@@ -29,15 +30,16 @@ function listen(server, port, host) {
   });
 }
 
-const closeServer = (server) =>
-  new Promise((resolve) => {
-    if (!server.listening) return resolve();
-    server.close(resolve);
-    server.closeAllConnections();
-  });
+/** Stops accepting connections and drops idle keep-alive ones; requests already running continue. Resolves when the port is closed. */
+function stopAccepting(server) {
+  if (!server.listening) return Promise.resolve();
+  const closed = new Promise((resolve) => server.close(resolve));
+  server.closeIdleConnections();
+  return closed;
+}
 
 /** Builds every module, wires their events together, and returns start/stop. */
-async function createApp({ home, overrides = {}, log = console.log } = {}) {
+async function createApp({ home, overrides = {}, log = console.log, readTailscaleName } = {}) {
   const config = loadConfig({ home, overrides });
   for (const dir of [config.home, config.paths.outbox, config.receiveDir]) fs.mkdirSync(dir, { recursive: true });
   const stale = sweepPartFiles(config.receiveDir) + sweepPartFiles(config.paths.outbox);
@@ -62,81 +64,90 @@ async function createApp({ home, overrides = {}, log = console.log } = {}) {
     for (const name of names) emitter.on(name, changed);
   }
 
+  // Phones connect from the network, so the device API and discovery listen on every interface.
+  // Tests pass overrides.bindHost = '127.0.0.1' so they never open a socket to the network.
+  const bindHost = overrides.bindHost || '0.0.0.0';
+  const lifecycle = new Lifecycle();
+  lifecycle.on('change', changed);
+  const tracker = createTracker();
+
   const bound = { device: 0, admin: 0, discovery: 0 };
   const ports = () => ({ ...bound });
-  const deviceApi = createDeviceApi({ identity, devices, sessions, pairing, store, ops, limits, receiveDir: config.receiveDir, addresses: listAddresses, notify: changed });
+  const addressProvider = createAddressProvider({ readName: readTailscaleName });
+  const addresses = addressProvider.list;
+  const deviceApi = createDeviceApi({ identity, devices, sessions, pairing, store, ops, limits, receiveDir: config.receiveDir, addresses, notify: changed });
   const pageHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'admin.html'), 'utf8');
   const adminApi = createAdminApi({
     identity, devices, sessions, pairing, store, limits,
     receiveDir: config.receiveDir, outboxDir: config.paths.outbox,
-    addresses: listAddresses, getPorts: ports, bus, notify: changed, pageHtml,
+    addresses, getPorts: ports, bus, notify: changed, pageHtml, getStatus: () => lifecycle.status(),
   });
 
   const deviceServer = https.createServer({ key: tls.key, cert: tls.cert, minVersion: 'TLSv1.2' }, deviceApi.handler);
   deviceServer.requestTimeout = 0; // large uploads over Wi-Fi can take a long time
   deviceServer.headersTimeout = 30_000;
   const adminServer = http.createServer(adminApi.handler);
+  tracker.attach(deviceServer);
+  tracker.attach(adminServer);
   let discovery = null;
   const timers = [];
-  let stopped = false;
+  let stopping = null;
 
-  async function stop() {
-    if (stopped) return;
-    stopped = true;
-    for (const timer of timers) clearInterval(timer);
-    sessions.endAll('shutdown');
-    deviceApi.closeAll();
-    adminApi.closeAll();
-    await Promise.all([closeServer(deviceServer), closeServer(adminServer), discovery ? discovery.stop() : null]);
+  /**
+   * Graceful stop: stop accepting, give running transfers up to graceMs to finish, then close
+   * event streams and cut whatever is left (an aborted upload deletes its .part file).
+   */
+  function stop({ graceMs = 5000 } = {}) {
+    stopping ??= (async () => {
+      for (const timer of timers) clearInterval(timer);
+      const closing = [stopAccepting(deviceServer), stopAccepting(adminServer)];
+      await tracker.whenIdle(graceMs);
+      deviceApi.closeAll();
+      adminApi.closeAll();
+      sessions.endAll('shutdown');
+      deviceServer.closeAllConnections();
+      adminServer.closeAllConnections();
+      await Promise.all([...closing, discovery ? discovery.stop() : null]);
+      lifecycle.stopped();
+    })();
+    return stopping;
   }
 
-  async function start() {
+  /** Binds one listener; a failure is recorded, not thrown, when `failures` is given (tolerant start). */
+  async function bind(key, protocol, port, open, failures) {
     try {
-      bound.device = await listen(deviceServer, config.ports.device, '0.0.0.0');
-      bound.admin = await listen(adminServer, config.ports.admin, '127.0.0.1');
-      discovery = createDiscovery({ identity, devicePort: bound.device });
-      bound.discovery = await discovery.start({ port: config.ports.discovery });
+      bound[key] = await open();
     } catch (err) {
-      await stop();
+      if (!failures) throw err;
+      failures.push(listenFailureReason(err, port, protocol));
+    }
+  }
+
+  /** Strict (default): any listen failure stops everything and rethrows. Tolerant: keep what works and report `degraded`. */
+  async function start({ tolerant = false } = {}) {
+    const failures = tolerant ? [] : null;
+    try {
+      await bind('device', 'TCP', config.ports.device, () => listen(deviceServer, config.ports.device, bindHost), failures);
+      await bind('admin', 'TCP', config.ports.admin, () => listen(adminServer, config.ports.admin, '127.0.0.1'), failures);
+      if (bound.device) {
+        discovery = createDiscovery({ identity, devicePort: bound.device });
+        await bind('discovery', 'UDP', config.ports.discovery, () => discovery.start({ port: config.ports.discovery, host: bindHost }), failures);
+      }
+    } catch (err) {
+      await stop({ graceMs: 0 });
       throw err;
     }
     timers.push(setInterval(() => pairing.sweep(), 10_000).unref());
+    if (readTailscaleName) {
+      await addressProvider.refresh();
+      timers.push(setInterval(() => addressProvider.refresh(), 60_000).unref());
+    }
+    if (failures && failures.length) lifecycle.degraded(failures.join(' '));
+    else lifecycle.running();
     return ports();
   }
 
-  return { start, stop, ports, config, identity, fingerprint: tls.fingerprint, devices, sessions, pairing, store };
-}
-
-function explain(err, config) {
-  if (err.code === 'EADDRINUSE') {
-    return `Port ${err.port} is already in use by another program. Set another in ${config.paths.config} (for example {"ports":{"device":9000}}).`;
-  }
-  return err.message;
-}
-
-async function main() {
-  const app = await createApp();
-  try {
-    await app.start();
-  } catch (err) {
-    console.error(`FlashPush could not start: ${explain(err, app.config)}`);
-    process.exit(1);
-  }
-  const p = app.ports();
-  console.log(`FlashPush is running.
-  Admin page (this laptop only): http://127.0.0.1:${p.admin}
-  Phones connect over HTTPS on port ${p.device}; discovery listens on UDP ${p.discovery}
-  Received files are saved to: ${app.config.receiveDir}`);
-  const shutdown = () => app.stop().then(() => process.exit(0));
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-}
-
-if (require.main === module) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+  return { start, stop, ports, config, identity, fingerprint: tls.fingerprint, devices, sessions, pairing, store, lifecycle, bus };
 }
 
 module.exports = { createApp };

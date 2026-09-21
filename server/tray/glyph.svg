@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>FlashPush tray glyph: two arrows circling a dot</title>
+  <!-- Reference for build-icons.ps1, which draws the same geometry at 16-256 px in three tints. -->
+  <g fill="none" stroke="#1CA2FD" stroke-width="6.4" stroke-linecap="round">
+    <path d="M 10.38 24.13 A 23 23 0 0 1 51.92 20.5"/>
+    <path d="M 53.62 39.87 A 23 23 0 0 1 12.08 43.5"/>
+  </g>
+  <g fill="#1CA2FD">
+    <polygon points="57.02,29.33 57.98,17.0 45.86,24.0"/>
+    <polygon points="6.98,34.67 6.02,47.0 18.14,40.0"/>
+  </g>
+  <circle cx="32" cy="32" r="5.8" fill="#16F9CB"/>
+</svg>

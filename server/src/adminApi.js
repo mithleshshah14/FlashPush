@@ -21,7 +21,7 @@ const PAGE_HEADERS = {
  * The loopback admin API. The guard is a browser cross-site defence, not authentication:
  * anything running as the logged-in user on this laptop can still call it.
  */
-function createAdminApi({ identity, devices, sessions, pairing, store, limits, receiveDir, outboxDir, addresses, getPorts, bus, notify, pageHtml, log = console.error }) {
+function createAdminApi({ identity, devices, sessions, pairing, store, limits, receiveDir, outboxDir, addresses, getPorts, bus, notify, pageHtml, getStatus = () => ({ state: 'running', reason: null }), log = console.error }) {
   const streams = new Set();
   const laptop = { id: identity.laptopId, name: identity.name };
 
@@ -63,6 +63,7 @@ function createAdminApi({ identity, devices, sessions, pairing, store, limits, r
       laptop,
       addresses: addresses(),
       ports: getPorts(),
+      status: getStatus(),
       receiveDir,
       pending: pairing.listPending(),
       devices: devices.list().map((d) => ({ ...d, connected: sessions.isConnected(d.deviceId) })),

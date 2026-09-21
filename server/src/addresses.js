@@ -1,6 +1,11 @@
 'use strict';
 
 const os = require('node:os');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+
+const execFileAsync = promisify(execFile);
+const HOST_NAME = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
 
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
@@ -38,4 +43,54 @@ function listAddresses(interfaces = os.networkInterfaces()) {
   return found.sort((a, b) => rank[a.kind] - rank[b.kind]);
 }
 
-module.exports = { classifyIp, listAddresses };
+/** The laptop's MagicDNS name from `tailscale status --json`, or null when it is not a plain host name. */
+function parseTailscaleName(jsonText) {
+  let name;
+  try {
+    name = JSON.parse(jsonText).Self.DNSName;
+  } catch {
+    return null;
+  }
+  if (typeof name !== 'string') return null;
+  const host = name.replace(/\.$/, '').toLowerCase();
+  return host.length > 0 && host.length <= 253 && HOST_NAME.test(host) ? host : null;
+}
+
+/** Best effort: no Tailscale CLI, a failure or a timeout all mean "no name". `exec` is injectable for tests. */
+async function readTailscaleName(exec = async (file, args, options) => (await execFileAsync(file, args, options)).stdout) {
+  try {
+    return parseTailscaleName(await exec('tailscale', ['status', '--json'], { timeout: 2000, windowsHide: true }));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The address list shown to phones: interface addresses plus, once `refresh()` has run, the MagicDNS name
+ * (placed after the LAN addresses and before the Tailscale IP, since a name survives IP changes).
+ */
+function createAddressProvider({ interfaces = os.networkInterfaces, readName } = {}) {
+  let name = null;
+
+  function list() {
+    const addresses = listAddresses(interfaces());
+    if (name) {
+      const at = addresses.findIndex((a) => a.kind !== 'lan');
+      addresses.splice(at === -1 ? addresses.length : at, 0, { name, kind: 'tailscale-name' });
+    }
+    return addresses;
+  }
+
+  async function refresh() {
+    if (!readName) return;
+    try {
+      name = await readName();
+    } catch {
+      /* keep the last known name */
+    }
+  }
+
+  return { list, refresh };
+}
+
+module.exports = { classifyIp, listAddresses, parseTailscaleName, readTailscaleName, createAddressProvider };

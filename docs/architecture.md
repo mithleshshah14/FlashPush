@@ -16,7 +16,7 @@ Ports can be changed in `config.json` (`{"ports":{"device":9000}}`) when another
 
 | Module | Responsibility |
 |---|---|
-| `index.js` | `createApp()` builds and wires everything, returns `start()` / `stop()`; the CLI entry |
+| `index.js` | `createApp()` builds and wires everything, returns `start({ tolerant })` / `stop({ graceMs })`; a library (the entry point is `cli.js`) |
 | `config.js` | state folder, ports, paths, limits (constants) |
 | `fsutil.js` | JSON read, atomic JSON write |
 | `errors.js` | error codes, HTTP statuses, the JSON envelope |
@@ -35,6 +35,13 @@ Ports can be changed in `config.json` (`{"ports":{"device":9000}}`) when another
 | `http.js` | JSON in/out, error envelope, router, SSE, file streaming |
 | `deviceApi.js` | the phone-facing `/v1` routes |
 | `adminApi.js` + `public/admin.html` | loopback admin routes and the (temporary) page |
+| `cli.js` | the entry point: `npm start`, `--no-tray`, `--install-autostart`, `--uninstall-autostart`, `--status`; `runApp()` starts the app tolerantly, then the tray |
+| `lifecycle.js` | the `starting / running / degraded / stopped` state, human reasons for failed listens, the in-flight request tracker used by graceful stop |
+| `singleInstance.js` | asks `127.0.0.1:<admin port>/admin/ping` whether FlashPush already runs |
+| `desktop.js` | opens the admin page in the browser and a folder in Explorer, with validated arguments and no shell |
+| `tray-protocol.js`, `tray.js`, `shell.js` | the JSON-line protocol and menu model (pure), the controller that runs `tray/tray.ps1`, and the wiring from app events to the tray |
+| `autostart.js` | generates and installs/removes the hidden `FlashPush.vbs` launcher (Startup folder and Start Menu) |
+| `addresses.js` | also reads the MagicDNS name (`tailscale status --json`, best effort) |
 
 Dependencies only point downwards: the two APIs depend on the stores and helpers; the stores never depend on HTTP.
 
@@ -73,8 +80,30 @@ Phones get SSE (`/v1/events`): `item-added`, `item-deleted`, `expired`. The admi
 
 ## Shutdown (`stop`)
 
-Idempotent: stop the timers, end all sessions (`shutdown`), close all event streams, close both servers and their connections, close the UDP socket.
+`stop({ graceMs = 5000 })` is idempotent and follows a fixed order:
+
+1. stop the timers and **stop accepting** connections (idle keep-alive connections are dropped);
+2. **wait up to `graceMs`** for running transfers to finish (event streams do not count as work);
+3. close all event streams, end all sessions (`shutdown`);
+4. close every remaining connection (an upload that is still running is cut, and its `.part` file is deleted) and the listeners, and stop discovery;
+5. mark the lifecycle `stopped`. The CLI then tells the tray to exit and remove its icon.
 
 ## What is not here yet
 
-Windows tray, notifications, autostart, start-up degraded state (Plan 5); the Stitch-designed admin UI (Plan 4); the Android app (Plan 3); Tailscale name resolution and the phone's address race (Plan 6).
+The Stitch-designed admin UI (Plan 4), the Android app (Plan 3), and the phone's address race and reconnect rules (Plan 6). The current admin page is a temporary plain page.
+
+## Windows shell
+
+`cli.js` is the entry point. `runApp()` starts the app with `start({ tolerant: true })`: each listener binds on its own, so a taken port makes FlashPush **degraded** (with the reason, e.g. "Port 8765 is used by another program.") instead of aborting. The state is in `GET /admin/state` as `status: { state, reason }` and every change raises the `changed` signal.
+
+```
+tray.ps1 (PowerShell, NotifyIcon)  <-- JSON lines over stdin/stdout -->  tray.js  <-->  shell.js  <-->  app events
+```
+
+- The tray is a **static script** started with an argument array. Node sends `menu` (icon, tooltip, items), `notify` and `exit`; the tray sends `ready`, `click` (a fixed menu id) and `notification-click`. Everything is display text or a fixed id; nothing received is executed. The tray exits when told to or when its input closes (Node has gone).
+- `shell.js` rebuilds the menu when the status or the number of pending approvals changes (an unchanged menu is not resent), shows a balloon for each new pairing request, and maps clicks to actions (open the admin page, open the receive folder, toggle Start with Windows, stop).
+- **Single instance:** before creating the app, `cli.js` asks the admin port whether FlashPush already answers; if so it opens that page and exits.
+- **Start with Windows** is a hidden-window `.vbs` launcher generated from a fixed template from three validated paths; see [setup.md](setup.md).
+- Test-only switch: `createApp({ overrides: { bindHost: '127.0.0.1' } })` keeps the device API and discovery on the loopback interface. Production listens on every interface because phones connect from the network.
+
+Operating instructions: [setup.md](setup.md). Manual checks: [testing.md](testing.md).
