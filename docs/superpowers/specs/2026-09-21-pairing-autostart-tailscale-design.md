@@ -295,7 +295,7 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
   | **Stop FlashPush** | graceful stop below |
 
 - **Graceful stop:** (1) stop accepting new sessions and uploads; (2) let active transfers finish for up to **5 seconds**; (3) close event streams; (4) close the HTTPS, admin and discovery listeners; (5) tell the tray to exit and remove its icon. Transfers still running afterwards are aborted and their `.part` files removed.
-- **Notifications:** a Windows balloon "Pixel 7 wants to connect — code 482 916"; clicking opens the approvals view.
+- **Notifications:** (1) a Windows balloon "Pixel 7 wants to connect, code 482 916" for a pairing request; clicking opens the approvals view. (2) When a phone sends a message, image or file while the admin site is **not open**, one balloon per burst: "Pixel 7 sent a message", "…sent an image", "…sent a file" or "…sent 3 items: 1 message, 2 images". Items arriving within about 2.5 s are combined. Clicking opens the site at the chat (`#/messages`) for messages only, otherwise at the dashboard (`#/dashboard`), where files and images are listed. The balloon never quotes the message or a file name. The site counts as open while any admin page holds its live-update connection.
 - A Start Menu shortcut "FlashPush" (created with autostart) relaunches after **Stop**.
 
 ## 9. Phone app (Flutter)

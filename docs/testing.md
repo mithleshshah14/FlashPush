@@ -77,6 +77,14 @@ Start clean: `cd server`, then `node src\cli.js --status` should say `Start with
 3. In Task Manager end the `node.exe` process running FlashPush: the tray icon disappears within a second or two (it exits when Node goes away). Start FlashPush again: it works, and no stale icon remains.
 4. In Task Manager end only the `powershell.exe` tray process: the server keeps running (`http://127.0.0.1:8760` answers); restarting FlashPush brings the tray back.
 
+### Notification for what the phone sends (manual)
+
+- [ ] With FlashPush running and **no admin page open** (close the tab), send a text from the phone: within a few seconds one balloon "<phone> sent a message" appears; clicking it opens the site at Messages.
+- [ ] Send an image, then a file: balloon "sent an image" / "sent a file"; clicking opens the Dashboard.
+- [ ] Send three items quickly: **one** balloon "sent 3 items: …".
+- [ ] Open the site and send again: **no** balloon.
+- [ ] The balloon never shows the message text or the file name.
+
 ### Antivirus notes
 
 Behaviour-based scanners can flag a program that starts a hidden PowerShell script or adds a Startup entry. If your antivirus reacts while you run the checklist:

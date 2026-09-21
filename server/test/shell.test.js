@@ -12,11 +12,15 @@ function setup({ status = { state: 'running', reason: null }, pending = [], auto
     bus: new EventEmitter(),
     pairing: Object.assign(new EventEmitter(), { listPending: () => app.pending }),
     lifecycle: { status: () => app.status },
+    store: new EventEmitter(),
+    devices: { get: () => ({ name: 'Pixel 7' }) },
+    admin: { viewers: () => app.viewers },
+    viewers: 0,
     config: { receiveDir: 'C:\\Users\\Me\\Downloads\\FlashPush' },
     status,
     pending,
   };
-  const tray = { updates: [], notes: [], update: (m) => tray.updates.push(m), notify: (t, b) => tray.notes.push([t, b]) };
+  const tray = { updates: [], notes: [], update: (m) => tray.updates.push(m), notify: (t, b, target) => tray.notes.push(target ? [t, b, target] : [t, b]) };
   const desktop = { urls: [], folders: [], openUrl: (u) => desktop.urls.push(u), openFolder: (d) => desktop.folders.push(d) };
   const autostart = {
     enabled: autostartOn,
@@ -29,7 +33,7 @@ function setup({ status = { state: 'running', reason: null }, pending = [], auto
   };
   const stops = [];
   const logs = [];
-  const shell = attachTray({ app, tray, autostart, desktop, adminUrl: ADMIN_URL, onStop: () => stops.push('stop'), log: (m) => logs.push(m) });
+  const shell = attachTray({ app, tray, autostart, desktop, adminUrl: ADMIN_URL, onStop: () => stops.push('stop'), log: (m) => logs.push(m), notifyDelayMs: 0 });
   return { app, tray, desktop, autostart, stops, logs, shell };
 }
 
@@ -59,17 +63,47 @@ test('a change signal refreshes the menu with the new status and pending count, 
 test('a new pairing request shows a balloon with the phone and its code', () => {
   const { app, tray } = setup();
   app.pairing.emit('pending', { deviceName: 'Pixel 7', sasDisplay: '482 916' });
-  assert.deepEqual(tray.notes, [['FlashPush', 'Pixel 7 wants to connect, code 482 916']]);
+  assert.deepEqual(tray.notes, [['FlashPush', 'Pixel 7 wants to connect, code 482 916', 'approvals']]);
 });
 
-test('open, approvals and devices open the admin page; files opens the receive folder', () => {
+test('each menu item and balloon target opens the right page or folder', () => {
   const { shell, desktop } = setup();
-  shell.onAction('open');
-  shell.onAction('approvals');
-  shell.onAction('devices');
-  shell.onAction('files');
-  assert.deepEqual(desktop.urls, [ADMIN_URL, ADMIN_URL, ADMIN_URL]);
+  for (const id of ['open', 'approvals', 'devices', 'messages', 'items', 'files']) shell.onAction(id);
+  assert.deepEqual(desktop.urls, [
+    ADMIN_URL,
+    `${ADMIN_URL}#/approvals`,
+    `${ADMIN_URL}#/devices`,
+    `${ADMIN_URL}#/messages`,
+    `${ADMIN_URL}#/dashboard`,
+  ]);
   assert.deepEqual(desktop.folders, ['C:\\Users\\Me\\Downloads\\FlashPush']);
+});
+
+const later = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+test('a message from the phone while the site is closed shows one balloon that opens the chat', async () => {
+  const { app, tray } = setup();
+  app.store.emit('add', { item: { kind: 'text', from: 'phone', text: 'hi' }, deviceId: 'dev-1' });
+  app.store.emit('add', { item: { kind: 'text', from: 'phone', text: 'again' }, deviceId: 'dev-1' });
+  await later();
+  assert.deepEqual(tray.notes, [['FlashPush', 'Pixel 7 sent 2 items: 2 messages', 'messages']]);
+});
+
+test('a file or image from the phone opens the dashboard instead', async () => {
+  const { app, tray } = setup();
+  app.store.emit('add', { item: { kind: 'file', from: 'phone', name: 'a.png', mime: 'image/png' }, deviceId: 'dev-1' });
+  await later();
+  assert.deepEqual(tray.notes, [['FlashPush', 'Pixel 7 sent an image', 'items']]);
+});
+
+test('no balloon while the site is open, and none for what the laptop itself sent', async () => {
+  const { app, tray } = setup();
+  app.viewers = 1;
+  app.store.emit('add', { item: { kind: 'text', from: 'phone' }, deviceId: 'dev-1' });
+  app.viewers = 0;
+  app.store.emit('add', { item: { kind: 'text', from: 'laptop' }, deviceId: 'dev-1' });
+  await later();
+  assert.deepEqual(tray.notes, []);
 });
 
 test('the autostart item toggles the setting and refreshes the checkbox', () => {

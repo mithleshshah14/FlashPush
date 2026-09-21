@@ -67,6 +67,9 @@ function fakeApp(status = { state: 'running', reason: null }) {
     bus: new EventEmitter(),
     pairing: Object.assign(new EventEmitter(), { listPending: () => [] }),
     lifecycle: { status: () => status },
+    store: new EventEmitter(),
+    devices: { get: () => ({ name: 'Pixel 7' }) },
+    admin: { viewers: () => 0 },
     config: { receiveDir: 'C:\\Downloads\\FlashPush' },
     ports: () => ({ device: 8765, admin: 8760, discovery: 8766 }),
     start: async (options) => {

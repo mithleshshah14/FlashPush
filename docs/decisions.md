@@ -224,3 +224,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Type chooser sheet | removed (supersedes the earlier "New transfer asks the type first" decision) | it became dead code; one tap now does the job |
 | Button position | bottom center | requested ("click on center") |
 | Stitch designs | the "New transfer: choose type" sheet screens are superseded by this behaviour; the per-tab button is not yet drawn in Stitch | the app and spec are the source of truth until the designs are refreshed |
+
+## 2026-09-22 — tray notification for what a phone sends (user request)
+
+| Decision | Choice | Why |
+|---|---|---|
+| When | an item arrives from a phone and no admin page is open | requested: notify only when the site is not already open |
+| How many | one balloon per phone per burst (2.5 s window), e.g. "sent 3 items: 1 message, 2 images" | requested "one notification"; avoids a balloon per file of a batch |
+| Content | phone name and kinds only, never text or file names | notifications can appear on a locked or shared screen |
+| Click | messages only → `#/messages` (chat); anything with a file or image → `#/dashboard`; pairing → `#/approvals` | opens the page where the item is shown |
+| "Site is open" | any admin page holding its live-update stream | simple and exact; a page open in a hidden tab still counts as open (documented limitation) |

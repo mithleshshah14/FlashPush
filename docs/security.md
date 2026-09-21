@@ -85,3 +85,7 @@ This is a personal project; open an issue on the repository, or contact the main
 | Images | thumbnails come from `?inline=1`, which the server never allows for SVG |
 
 Review checklist addition for UI changes: does the change need an inline script or style, an external request, or HTML built from data? If yes, redesign it.
+
+## Tray notifications
+
+Balloons name the phone and the kind of item ("Pixel 7 sent a file") but never the message text or a file name: Windows can show them on a locked or shared screen and keeps them in the notification history. Text passed to the tray is cleaned and length-limited, and a click only maps to one of three fixed pages (approvals, messages, dashboard); nothing received from a phone is ever used to build a URL or a command.

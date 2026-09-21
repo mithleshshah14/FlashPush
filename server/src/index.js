@@ -148,7 +148,7 @@ async function createApp({ home, overrides = {}, log = console.log, readTailscal
     return ports();
   }
 
-  return { start, stop, ports, config, identity, fingerprint: tls.fingerprint, devices, sessions, pairing, store, lifecycle, bus };
+  return { start, stop, ports, config, identity, fingerprint: tls.fingerprint, devices, sessions, pairing, store, lifecycle, bus, admin: adminApi };
 }
 
 module.exports = { createApp };
