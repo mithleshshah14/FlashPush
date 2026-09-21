@@ -57,3 +57,31 @@ Repository → **Settings**. None of this can be set from the repository files.
 1. **Revoke it immediately** (rotate the key/token/password): removing it from git does not make it safe.
 2. Remove it from the current files and push.
 3. Only then consider rewriting history (`git filter-repo`) and force-pushing; anyone who cloned earlier still has it, so step 1 is the fix.
+
+## Applied on 2026-09-22 (with the GitHub CLI)
+
+Read back from GitHub after applying:
+
+| Setting | State |
+|---|---|
+| `main` and `develop` | protected: pull request required, **1 approval**, code-owner review, stale approvals dismissed, conversations must be resolved, **no force pushes, no deletions**. The owner (admin) can still bypass, because a solo maintainer cannot approve their own pull request. The working `feature/*` branches are deliberately not protected. |
+| Secret scanning + push protection | on (GitHub enables them for public repositories) |
+| Private vulnerability reporting | on |
+| Dependabot alerts | on |
+| Wiki, Projects | off (Issues stay on, forking stays on) |
+| Collaborators | none (only the owner) |
+| Visibility | public |
+
+Two-factor authentication on the GitHub account could not be verified through the API with the current token scopes: check it in Settings → Password and authentication.
+
+### Files only take effect on the default branch
+
+GitHub reads `SECURITY.md`, `CONTRIBUTING.md`, the pull request template and `CODEOWNERS` from the **default branch** (`main`). They currently live on the feature branch, so "Report a vulnerability" guidance, the PR template and required code-owner review become active once the feature branch is merged into `develop` and then `main` (through pull requests, since both branches are protected).
+
+### Reproduce or change
+
+```
+gh api -X PUT repos/<owner>/<repo>/branches/main/protection --input protection.json
+```
+
+with `protection.json`: `{"required_status_checks":null,"enforce_admins":false,"required_pull_request_reviews":{"required_approving_review_count":1,"require_code_owner_reviews":true,"dismiss_stale_reviews":true},"restrictions":null,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}` (same for `develop`); `gh api -X PUT repos/<owner>/<repo>/private-vulnerability-reporting`; `gh api -X PUT repos/<owner>/<repo>/vulnerability-alerts`. Set `enforce_admins` to `true` to remove the owner bypass.
