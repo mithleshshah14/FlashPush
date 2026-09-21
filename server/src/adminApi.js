@@ -163,7 +163,10 @@ function createAdminApi({ identity, devices, sessions, pairing, store, limits, r
     for (const sse of [...streams]) sse.close();
   }
 
-  return { handler, closeAll };
+  /** How many admin pages are open (each keeps one event stream). The tray stays quiet while this is above zero. */
+  const viewers = () => streams.size;
+
+  return { handler, closeAll, viewers };
 }
 
 module.exports = { createAdminApi };

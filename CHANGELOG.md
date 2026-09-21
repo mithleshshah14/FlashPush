@@ -105,6 +105,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed (design feedback, phone)
 - The center button on the laptop screen now sends for the tab you are on: **Messages** opens the text box, **Images** the gallery, **Files** the file explorer, with no "New transfer" chooser step (spec section 9, decisions log). The chooser sheet is removed. Tests updated.
 
+### Added (laptop)
+- **Tray notification for what a phone sends** while the admin site is not open: one balloon per burst ("Pixel 7 sent a message / an image / a file / 3 items: …"), never showing content; clicking opens the chat (`#/messages`) for messages or the dashboard (`#/dashboard`) for files and images. The pairing balloon now opens `#/approvals`. New `itemNotifier.js` (pure, 10 tests), `adminApi.viewers()`, per-balloon click targets in the tray. Server suite: **324 tests**. Manual steps in `docs/testing.md`.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

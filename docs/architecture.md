@@ -116,3 +116,7 @@ Windows tray, notifications, autostart, start-up degraded state (Plan 5); the St
 ## Admin UI (Plan 4)
 
 `server/public/` holds the laptop web UI: plain HTML, CSS and ES modules, no build step. At start-up `static.js` reads `index.html` and everything under `assets/` (known extensions only) into a `Map` keyed by URL path; the admin handler answers `GET` requests by looking the path up in that map, so a URL can never become a file path. The page talks to the admin API only (same origin) and refreshes on the `changed` event. Details: [admin-ui.md](admin-ui.md).
+
+## Notifications for what a phone sends
+
+`itemNotifier.js` turns items arriving from a phone into at most one tray balloon per phone per burst (a 2.5 s window) and stays silent while an admin page is open (`adminApi.viewers()` counts the open live-update streams). `shell.js` connects it: `store` `add` events feed the notifier, and a click on the balloon is routed by `tray.js` to `messages` (chat) or `items` (dashboard) through the same action handler as the menu. The text is built in one pure function (`describe`) and is tested without a tray.

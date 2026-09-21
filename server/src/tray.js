@@ -7,6 +7,7 @@ const { encode, createLineDecoder, clean, TRAY_ACTIONS } = require('./tray-proto
 const TRAY_DIR = path.join(__dirname, '..', 'tray');
 const MAX_TITLE = 63; // balloon title limit
 const MAX_BODY = 255;
+const NOTIFY_TARGETS = ['approvals', 'messages', 'items'];
 
 /**
  * Runs the static PowerShell tray (server/tray/tray.ps1) and talks to it over JSON lines.
@@ -27,10 +28,11 @@ function createTray({
     resolveReady = resolve;
   });
   let exited = Promise.resolve();
+  let lastTarget = 'approvals'; // what the most recent balloon was about
 
   function onMessage(message) {
     if (message.type === 'ready') resolveReady(true);
-    else if (message.type === 'notification-click') onAction('approvals');
+    else if (message.type === 'notification-click') onAction(lastTarget);
     else if (message.type === 'click' && TRAY_ACTIONS.includes(message.id)) onAction(message.id);
   }
 
@@ -71,7 +73,11 @@ function createTray({
   }
 
   const update = (model) => send({ type: 'menu', ...model });
-  const notify = (title, body) => send({ type: 'notify', title: clean(title, MAX_TITLE), body: clean(body, MAX_BODY) });
+  /** `target` says where a click on the balloon should lead: approvals (default), messages or items. */
+  const notify = (title, body, target = 'approvals') => {
+    lastTarget = NOTIFY_TARGETS.includes(target) ? target : 'approvals';
+    send({ type: 'notify', title: clean(title, MAX_TITLE), body: clean(body, MAX_BODY) });
+  };
 
   /** Asks the tray to remove its icon and exit; kills it if it does not comply. */
   async function stop() {

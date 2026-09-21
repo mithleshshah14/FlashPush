@@ -78,6 +78,20 @@ test('clicks on known menu ids and on the notification are routed; anything else
   assert.deepEqual(actions, ['open', 'stop', 'approvals']);
 });
 
+test('a click on a balloon leads to what that balloon was about', () => {
+  const { tray, child, actions } = setup();
+  tray.start();
+  tray.notify('FlashPush', 'Pixel 7 sent a message', 'messages');
+  child.say({ type: 'notification-click' });
+  tray.notify('FlashPush', 'Pixel 7 sent a file', 'items');
+  child.say({ type: 'notification-click' });
+  tray.notify('FlashPush', 'Pixel 7 wants to connect, code 482 916');
+  child.say({ type: 'notification-click' });
+  tray.notify('FlashPush', 'odd', '"; calc');
+  child.say({ type: 'notification-click' });
+  assert.deepEqual(actions, ['messages', 'items', 'approvals', 'approvals'], 'unknown targets fall back to approvals');
+});
+
 test('whenReady resolves true when the tray reports ready, false if it exits first', async () => {
   const a = setup();
   a.tray.start();

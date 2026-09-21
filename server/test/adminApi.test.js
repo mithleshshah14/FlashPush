@@ -133,3 +133,13 @@ test('the event stream announces changes', async (t) => {
   env.bus.emit('changed');
   assert.equal(await next, 'changed');
 });
+
+test('viewers counts the open admin pages (event streams)', async (t) => {
+  const env = await startAdmin(t);
+  assert.equal(env.api.viewers(), 0);
+  const stream = await env.events();
+  assert.equal(env.api.viewers(), 1);
+  stream.close();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(env.api.viewers(), 0);
+});

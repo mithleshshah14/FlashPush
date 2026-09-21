@@ -121,7 +121,7 @@ async function startAdmin(t, limitOverrides = {}) {
     return deviceId;
   }
 
-  return { call, events, pairing, devices, sessions, store, bus, get adminPort() { return ports.admin; }, receiveDir, outboxDir, addPhone };
+  return { api, call, events, pairing, devices, sessions, store, bus, get adminPort() { return ports.admin; }, receiveDir, outboxDir, addPhone };
 }
 
 module.exports = { startAdmin };
