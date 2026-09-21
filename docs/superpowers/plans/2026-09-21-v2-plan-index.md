@@ -28,3 +28,14 @@ Suggested order: 1A → 1B, with 2 in parallel; then 3 and 4; then 5; then 6.
 ## Before Plan 1A can start
 
 `develop` currently only contains the README. The v1 prototype, the docs and the spec live on `feature/v2-pairing-autostart-tailscale`. That branch should be merged into `develop` first (recommended: `git merge --no-ff`, then push), so that each plan's feature branch can be created from a `develop` that contains the code it builds on. This needs the repository owner's go-ahead.
+
+## Status (2026-09-22)
+
+| Plan | State |
+|---|---|
+| 1A, 1B-i, 1B-ii-a, 1B-ii-b (server) | done, merged into `develop` (309 server tests) |
+| 2 Stitch designs | done: 29 PNG exports and the design system in `docs/design/` and `.stitch/` |
+| 3 Android app (incl. the phone side of Tailscale and reconnect from Plan 6) | done, merged (170 app tests); not run on a real phone |
+| 4 Laptop web UI | done, merged; screenshots in `docs/design/implemented/` |
+| 5 Windows shell (incl. the laptop side of Tailscale from Plan 6) | done, merged; real tray, autostart and firewall runs are manual (`docs/testing.md`) |
+| 6 Tailscale + reconnect + hardening | folded into Plans 3 and 5; remaining work is real-device testing |

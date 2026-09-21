@@ -7,6 +7,7 @@
 | [superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md](superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md) | v2 design: pairing, security, autostart/tray, Tailscale (revision 2) | approved 2026-09-21 |
 | [FlashPush_v2_design_review_suggestions.md](FlashPush_v2_design_review_suggestions.md) | external review of the spec; triage in decisions.md | input |
 | [pairing.md](pairing.md) | exact pairing crypto, message flow, limits and test vectors | written (Plan 1A) |
+| [quickstart.md](quickstart.md) | first end-to-end test: start the laptop, install the app, pair, send | written |
 | [dev-safety.md](dev-safety.md) | antivirus-safe development rules, the test guard, how to react to an alert | written |
 | [architecture.md](architecture.md) | listeners, modules, state on disk, start-up and shutdown | written (Plan 1B-ii-b) |
 | [admin-ui.md](admin-ui.md) | laptop web UI: views, API use, theme, accessibility, security rules, screenshots | written (Plan 4) |
