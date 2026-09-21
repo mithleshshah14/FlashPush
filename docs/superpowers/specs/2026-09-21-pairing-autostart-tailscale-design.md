@@ -1,6 +1,6 @@
 # FlashPush v2: device pairing, autostart and Tailscale — Design
 
-Status: **revision 2, awaiting review** · Date: 2026-09-21
+Status: **revision 2.1, approved 2026-09-21; simplified after an over-engineering review (see `docs/decisions.md`)** · Date: 2026-09-21
 Supersedes the v1 shared-token design (QR/link + one token).
 Revision 2 folds in `docs/FlashPush_v2_design_review_suggestions.md`; what was adopted or deferred is in `docs/decisions.md`.
 
@@ -53,11 +53,11 @@ Each has one job and is testable alone.
 
 | Module | Responsibility |
 |---|---|
-| `config.js` | state directory, ports, paths, limits (all limits overridable in `config.json`) |
+| `config.js` | state directory, ports, paths, limits (limits are constants; `config.json` may set only ports and the receive folder) |
 | `identity.js` | permanent laptop ID + display name |
 | `tls.js` | create/load self-signed cert (generated with the small pure-JS `selfsigned` package, the only new server dependency; `qrcode` is removed); SHA-256 fingerprint |
 | `crypto.js` | the pairing primitives in §3.2 (commit, SAS, proof) and random helpers, exactly as specified, shared by server and integration-test client |
-| `devices.js` | approved-device store; issue secret (store SHA-256 only); verify; revoke; revoked-device tombstones |
+| `devices.js` | approved-device store; issue secret (store SHA-256 only); verify; remove (revoke and forget are the same) |
 | `pairing.js` | pairing state machine, expiry, limits |
 | `sessions.js` | in-memory session tokens: one per device, idle + absolute expiry |
 | `ratelimit.js` | small sliding-window limiter keyed by IP |
@@ -109,7 +109,7 @@ A code taken from the fingerprint alone can be ground offline by a man-in-the-mi
 3. Phone → `POST /v1/pair/reveal {requestId, np}`. Laptop checks `SHA256("FLASHPUSH-COMMIT-v1" ‖ np) == commit`, else `COMMIT_MISMATCH` and the request is dropped.
 4. Both compute `SAS`. The laptop shows it on the approval card; the phone shows it on its waiting screen.
 5. User confirms the codes match and clicks **Approve** (laptop UI or tray notification). Mismatch → **Deny**.
-6. Phone polls `GET /v1/pair/status/:requestId?deviceId=…&wait=25` with header `X-Pair-Proof: <proof>`. A wrong or missing proof, wrong device or unknown request gets the same `PAIR_NOT_FOUND` answer (no oracle). On `approved` with a valid proof it receives `{secret, laptop, addresses}`.
+6. Phone polls (every 1–2 s, no long-poll) `GET /v1/pair/status/:requestId?deviceId=…` with header `X-Pair-Proof: <proof>`. A wrong or missing proof, wrong device or unknown request gets the same `PAIR_NOT_FOUND` answer (no oracle). On `approved` with a valid proof it receives `{secret, laptop, addresses}`.
 7. The secret can be fetched again with a valid proof for **60 seconds** after approval, so a lost response does not force re-pairing; after that it is erased from memory and the request record is deleted.
 
 **Why this is sound:** `nl` is chosen after the commit, and the phone reveals `np` only after receiving `nl`. A man-in-the-middle must fix both legs' inputs before learning the other side's random value, so matching codes appear with probability 1 in 1,000,000 per attempt, and every attempt shows up as a pairing request the user can see.
@@ -126,7 +126,7 @@ A code taken from the fingerprint alone can be ground offline by a man-in-the-mi
 - All data routes require `Authorization: Bearer <sessionToken>`.
 - **Disconnect:** `DELETE /v1/session` ends the session and its event stream; that phone gets 401 on data routes until it connects again. The pairing stays, so Connect needs no approval.
 - Server restart ends all sessions.
-- **Forget laptop** (phone) → `DELETE /v1/devices/self` (best effort) + local wipe. **Revoke** (laptop UI/tray) → device removed, sessions ended, and a tombstone kept (max 100) so that phone's next attempt gets `DEVICE_REVOKED` instead of a generic 401. Re-pairing clears the tombstone.
+- **Forget laptop** (phone) → `DELETE /v1/devices/self` (best effort) + local wipe. **Revoke** (laptop UI/tray) → device removed and its sessions ended; that phone's next attempt gets `DEVICE_NOT_PAIRED`. No separate "revoked" state is remembered.
 
 ### 3.4 Blocking unapproved traffic
 
@@ -161,7 +161,7 @@ A code taken from the fingerprint alone can be ground offline by a man-in-the-mi
 Every non-2xx JSON response:
 
 ```json
-{ "error": { "code": "DEVICE_REVOKED", "message": "This device is no longer paired." } }
+{ "error": { "code": "DEVICE_NOT_PAIRED", "message": "This device is not paired with this laptop." } }
 ```
 
 The Flutter client branches on `code`, never on `message`.
@@ -171,8 +171,7 @@ The Flutter client branches on `code`, never on `message`.
 | `BAD_REQUEST` | 400 | malformed input |
 | `UNAUTHORIZED` | 401 | missing/invalid credentials |
 | `SESSION_EXPIRED` | 401 | session gone or expired: reconnect |
-| `DEVICE_NOT_PAIRED` | 401 | device unknown |
-| `DEVICE_REVOKED` | 403 | laptop revoked this device: stop retrying |
+| `DEVICE_NOT_PAIRED` | 401 | laptop does not know this device (never paired, forgotten or revoked): stop retrying, offer Re-pair / Forget |
 | `RATE_LIMITED` | 429 | slow down (`Retry-After`) |
 | `PAIR_NOT_FOUND` | 404 | unknown request / wrong proof |
 | `PAIR_EXPIRED` | 410 | request timed out |
@@ -187,7 +186,7 @@ The Flutter client branches on `code`, never on `message`.
 
 ### 4.2 Idempotency
 
-- `POST /text` and `POST /file` accept a client-generated `X-Operation-Id` (UUID). The server remembers completed operation IDs **per device, last 200 or 10 minutes**, and a duplicate returns the original item with `200` and no second copy. If the same ID is still uploading, the duplicate request waits for the first to finish and then returns that result (bounded by the request timeout), never starting a second write.
+- `POST /text` and `POST /file` accept a client-generated `X-Operation-Id` (UUID). The server remembers completed operation IDs **per device, last 200 or 10 minutes**, and a duplicate returns the original item with `200` and no second copy. If the same ID is still uploading, the duplicate gets `429 RATE_LIMITED` with `Retry-After: 1`; the phone retries and then receives the stored result, so a second write never starts.
 - `POST /session` replaces the device's session (safe to repeat). `DELETE /session`, `DELETE /items/:id`, `DELETE /devices/self` treat "already gone" as success. Pairing: see §3.2 (same `deviceId` replaces its pending request).
 
 ### 4.3 Body limits
@@ -228,7 +227,7 @@ Internal states (source of truth: `docs/connection-state.md`):
 DISCOVERING → DISCOVERED → NOT_PAIRED → PAIRING → PAIRED → CONNECTING → CONNECTED → DISCONNECTING → PAIRED
 ```
 
-Failure states, kept separate from the main path: `CONNECT_FAILED`, `LAPTOP_UNREACHABLE`, `CERT_CHANGED`, `REVOKED`, `PAIR_EXPIRED`, `PAIR_DENIED`.
+Failure states, kept separate from the main path: `CONNECT_FAILED`, `LAPTOP_UNREACHABLE`, `CERT_CHANGED`, `UNPAIRED`, `PAIR_EXPIRED`, `PAIR_DENIED`.
 The UI collapses these to **Not paired / Paired / Connected** plus a short reason when something failed.
 
 ### 6.2 Reconnect behavior
@@ -236,7 +235,7 @@ The UI collapses these to **Not paired / Paired / Connected** plus a short reaso
 - The app holds a **connect intent**. Pressing **Disconnect** clears it. Temporary network loss or a laptop restart keeps it.
 - With intent set, retry with exponential backoff (2 s, 4 s, 8 s … capped at **60 s**), only while the app is in the foreground, and re-running the address race each time.
 - `SESSION_EXPIRED` → reconnect immediately with the device secret.
-- `DEVICE_REVOKED` → clear intent, mark **Revoked**, offer **Re-pair** or **Forget**. No more retries.
+- `DEVICE_NOT_PAIRED` (revoked or forgotten on the laptop) → clear intent, mark **Not paired**, offer **Re-pair** or **Forget**. No more retries.
 - `CERT_CHANGED` (presented fingerprint ≠ pinned) → clear intent, never send the secret, show "Laptop identity changed", offer **Forget & pair again**. No more retries.
 - Laptop simply offline → stay paired, keep retrying at the capped interval.
 
@@ -355,9 +354,9 @@ Admin API (HTTP 127.0.0.1:8760, prefix `/admin`): `GET /ping`, `GET /state` (+ S
 
 - **Crypto vectors:** commit, SAS, proof against fixed known-answer vectors, shared with the Flutter tests.
 - **Pairing security:** wrong SAS path, modified `np`, modified `nl`, modified commit, expired request, request flood (limits), status polling with an invalid request ID, with the wrong device, with a wrong/missing proof, re-fetch within and after the 60 s window, re-pair replaces the old secret.
-- **Sessions and auth:** revoked device reconnecting (`DEVICE_REVOKED`), stale/unknown token, duplicate session creation invalidates the first, idle and absolute expiry, certificate mismatch handling, replayed `operationId`.
+- **Sessions and auth:** revoked device reconnecting (`DEVICE_NOT_PAIRED`), stale/unknown token, duplicate session creation invalidates the first, idle and absolute expiry, certificate mismatch handling, replayed `operationId`.
 - **Files:** duplicate names, `../`, absolute Windows path, UNC path, drive path, reserved names, overlong name, zero-byte file, oversize file, quota reached, disk-low rejection, interrupted upload leaves no item and no `.part`, retry with same `operationId`, symlink at target refused.
-- **Other units:** devices store (hash-only storage, tombstones), rate limiter, address classification (incl. Tailscale range and link-local drop), admin Host/Origin/header guard, discovery reply, launcher file generation, retention pruning (received files kept, outbox files removed).
+- **Other units:** devices store (hash-only storage, remove, re-pair), rate limiter, address classification (incl. Tailscale range and link-local drop), admin Host/Origin/header guard, discovery reply, launcher file generation, retention pruning (received files kept, outbox files removed).
 - **Integration:** start the HTTPS server on ephemeral ports and drive the full flow (pair → approve → session → send text/file → disconnect → 401 → revoke) with a Node client acting as the phone.
 
 **Flutter:** unit tests for SAS/commit/proof vectors, pin-decision logic, address race (one dead address, cancellation), reconnect state machine (backoff, revoked, cert changed), storage; widget tests for the laptops list states with a fake API.

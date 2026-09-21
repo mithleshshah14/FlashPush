@@ -47,3 +47,19 @@ Short record of what was decided, when, and why. Newest at the bottom.
 | First commit | README on `main`, then `develop` from `main`, then `feature/v2-pairing-autostart-tailscale` from `develop` | requested order |
 | Docs habit | After each completed piece of work, update `CHANGELOG.md` and the affected `docs/` files with that day's changes | requested |
 | Pushing / merging | Only when asked | first push done 2026-09-21 on request: `main`, `develop` and `feature/v2-pairing-autostart-tailscale` to `origin` (github.com/mithleshshah14/FlashPush); nothing merged yet |
+
+## 2026-09-21 — over-engineering review of Plan 1A (ponytail)
+
+Applied to the plan and spec before any code was written (about 290 lines fewer).
+
+| Change | Why | Note |
+|---|---|---|
+| Idempotency cache: no promises/wait/forgetDevice; an in-flight duplicate gets `429 RATE_LIMITED` + `Retry-After: 1` | phone retries anyway; the review's claim that the exclusive `.part` create would catch duplicates is wrong (unique naming would write `name (1)`), so an in-flight marker stays | spec §4.2 |
+| Rate limiter: dropped `maxKeys` and `reset`; kept `isBlocked` + `record` + `attempt` | the failed-auth limit in Plan 1B counts only failures, so it needs `isBlocked`/`record` (review said only `attempt` was used) | |
+| Sessions keyed by the token string; dropped `sweep` and `connectedDeviceIds` | a 256-bit random token needs no hashed index; `verify` already expires lazily | |
+| Device store: no `touch`/`flush`/dirty persistence | last-seen is a UI nicety; kept in memory | |
+| No revoked tombstones: `revoke` and `forget` are one `remove`; `DEVICE_REVOKED` code removed | one nicer error message was not worth ~25 lines + persistence; phone shows "Not paired" and offers Re-pair | spec §3.3, §4.1, §6.2 |
+| No long-poll: the phone polls pair status every 1–2 s | ~60 requests at most over LAN; removes waiters and timers | spec §3.2 |
+| One `expiresAt` deadline per pairing record | replaces the 4-branch expiry check | |
+| `rng` injection, TLS `now`, `CODES` export, `config.json` limits removed | nothing used them (`config.json` still sets ports and the receive folder, e.g. when a port is taken) | spec §2 |
+| **Rejected:** drop TLS/pinning/SAS and rely on Tailscale only | LAN use without Tailscale is a goal, and the design was approved; recorded as considered | |

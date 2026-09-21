@@ -18,7 +18,7 @@
 - Sizes: fingerprint 32 bytes (SHA-256 of the DER leaf certificate), `np` and `nl` 16 bytes, `requestId` 16 bytes, device secret 32 bytes, session token 32 bytes; all base64url (no padding, canonical) on the wire.
 - `SAS = uint32_big_endian(SHA256(label ‖ fp ‖ np ‖ nl)[0..4]) mod 1,000,000`, zero-padded to 6 digits, displayed `482 916`.
 - Device secrets are stored only as `SHA-256(secret)` hex. Secrets, tokens and request IDs are never logged.
-- Default limits (all overridable in `config.json`): pair request expiry 2 min; **unrevealed pair request expires after 10 s** (added in this plan, recorded in spec §3.2 on 2026-09-21); secret re-fetch window 60 s; max 3 pending pairings; 5 pair requests/min/IP; 20 devices; 10 failed auths/min/IP; 100 revoked tombstones; session idle 24 h, absolute 7 days; idempotency 200 operations or 10 min per device.
+- Default limits (constants in `config.js`; tests override them through `overrides.limits`, `config.json` may set only ports and the receive folder): pair request expiry 2 min; **unrevealed pair request expires after 10 s** (added in this plan, recorded in spec §3.2 on 2026-09-21); secret re-fetch window 60 s; max 3 pending pairings; 5 pair requests/min/IP; 20 devices; 10 failed auths/min/IP; session idle 24 h, absolute 7 days; idempotency 200 operations or 10 min per device.
 - Error codes and HTTP statuses exactly as in spec §4.1.
 - State directory: `%APPDATA%\FlashPush` (override `FLASHPUSH_HOME`). Tests always use a temp directory.
 - Branch: create `feature/server-security-core` from `develop` (see the plan index for the prerequisite merge). Commit trailer: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
@@ -35,8 +35,8 @@
 
 **Interfaces:**
 - Produces:
-  - `config.loadConfig({ home?, overrides? }) → { home, ports:{device,admin,discovery}, limits, receiveDir, paths:{config,identity,tlsKey,tlsCert,devices,items,outbox} }`; `config.DEFAULT_LIMITS`
-  - `errors.apiError(code, message?, { retryAfterMs? }) → ApiError{ code, status, message, retryAfterMs }`; `errors.ApiError`; `errors.envelope(err) → { error:{code,message} }`; `errors.CODES`
+  - `config.loadConfig({ home?, overrides? }) → { home, ports:{device,admin,discovery}, limits, receiveDir, paths:{config,identity,tlsKey,tlsCert,devices,items,outbox} }` (`config.json` may set only `ports` and `receiveDir`; limits are constants); `config.DEFAULT_LIMITS`
+  - `errors.apiError(code, message?, { retryAfterMs? }) → ApiError{ code, status, message, retryAfterMs }`; `errors.ApiError`; `errors.envelope(err) → { error:{code,message} }`
   - `fsutil.readJson(file, fallback)`; `fsutil.writeJsonAtomic(file, data, { mode? })`
   - `validate.isUuid(str)`; `validate.cleanName(value, max = 64)`
   - test helpers: `tmpDir(t)`, `createClock(start?) → { now(), advance(ms), set(ms) }`, `throwsCode(fn, code)`
@@ -143,10 +143,20 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { loadConfig, DEFAULT_LIMITS } = require('../src/config');
+const { loadConfig } = require('../src/config');
 const { tmpDir } = require('./helpers/tmp');
 
+function withoutEnv(t, name) {
+  const previous = process.env[name];
+  delete process.env[name];
+  t.after(() => {
+    if (previous === undefined) delete process.env[name];
+    else process.env[name] = previous;
+  });
+}
+
 test('defaults match the spec', (t) => {
+  withoutEnv(t, 'RECEIVE_DIR');
   const home = tmpDir(t);
   const cfg = loadConfig({ home });
   assert.equal(cfg.home, home);
@@ -163,20 +173,22 @@ test('defaults match the spec', (t) => {
   assert.equal(cfg.paths.tlsKey, path.join(home, 'key.pem'));
 });
 
-test('config.json overrides limits and ports, keeping the other defaults', (t) => {
+test('config.json sets ports and the receive folder, keeping the other defaults', (t) => {
+  withoutEnv(t, 'RECEIVE_DIR');
   const home = tmpDir(t);
-  fs.writeFileSync(path.join(home, 'config.json'), JSON.stringify({ limits: { maxDevices: 5 }, ports: { device: 9000 } }));
+  fs.writeFileSync(path.join(home, 'config.json'), JSON.stringify({ ports: { device: 9000 }, receiveDir: 'D:\\Inbox' }));
   const cfg = loadConfig({ home });
-  assert.equal(cfg.limits.maxDevices, 5);
-  assert.equal(cfg.limits.maxPendingPairings, DEFAULT_LIMITS.maxPendingPairings);
   assert.equal(cfg.ports.device, 9000);
   assert.equal(cfg.ports.admin, 8760);
+  assert.equal(cfg.receiveDir, 'D:\\Inbox');
 });
 
-test('explicit overrides beat config.json', (t) => {
+test('explicit overrides beat config.json, and limits are never read from it', (t) => {
   const home = tmpDir(t);
-  fs.writeFileSync(path.join(home, 'config.json'), JSON.stringify({ limits: { maxDevices: 5 } }));
-  const cfg = loadConfig({ home, overrides: { limits: { maxDevices: 2 } } });
+  fs.writeFileSync(path.join(home, 'config.json'), JSON.stringify({ ports: { device: 9000 }, limits: { maxDevices: 5 } }));
+  assert.equal(loadConfig({ home }).limits.maxDevices, 20);
+  const cfg = loadConfig({ home, overrides: { ports: { device: 9100 }, limits: { maxDevices: 2 } } });
+  assert.equal(cfg.ports.device, 9100);
   assert.equal(cfg.limits.maxDevices, 2);
 });
 
@@ -205,7 +217,7 @@ test('FLASHPUSH_HOME selects the state directory', (t) => {
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { apiError, envelope, ApiError, CODES } = require('../src/errors');
+const { apiError, envelope, ApiError } = require('../src/errors');
 
 test('every code maps to the HTTP status in the spec', () => {
   const expected = {
@@ -213,7 +225,6 @@ test('every code maps to the HTTP status in the spec', () => {
     UNAUTHORIZED: 401,
     SESSION_EXPIRED: 401,
     DEVICE_NOT_PAIRED: 401,
-    DEVICE_REVOKED: 403,
     RATE_LIMITED: 429,
     PAIR_NOT_FOUND: 404,
     PAIR_EXPIRED: 410,
@@ -226,7 +237,6 @@ test('every code maps to the HTTP status in the spec', () => {
     ITEM_NOT_FOUND: 404,
     INTERNAL: 500,
   };
-  assert.deepEqual(Object.keys(CODES).sort(), Object.keys(expected).sort());
   for (const [code, status] of Object.entries(expected)) assert.equal(apiError(code).status, status, code);
 });
 
@@ -248,8 +258,8 @@ test('unknown codes are a programming error', () => {
 });
 
 test('envelope has exactly the documented shape', () => {
-  assert.deepEqual(envelope(apiError('DEVICE_REVOKED')), {
-    error: { code: 'DEVICE_REVOKED', message: 'This device is no longer paired.' },
+  assert.deepEqual(envelope(apiError('PAIR_DENIED')), {
+    error: { code: 'PAIR_DENIED', message: 'The pairing request was denied.' },
   });
 });
 ```
@@ -307,6 +317,7 @@ test('isUuid accepts lowercase UUIDs only', () => {
 test('cleanName strips control characters, collapses whitespace and trims', () => {
   assert.equal(cleanName('  Pixel\t7\n Pro  '), 'Pixel 7 Pro');
   assert.equal(cleanName('a\u0000b'), 'a b');
+  assert.equal(cleanName('a\u2028b'), 'a b'); // line separator, folded by the whitespace collapse
 });
 
 test('cleanName limits length and rejects non-strings', () => {
@@ -333,19 +344,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-/** Reads a JSON file. Missing file → fallback. Invalid JSON → an Error that names the file. */
+/** Reads a JSON file. Missing file → fallback. Anything else that goes wrong → an Error that names the file. */
 function readJson(file, fallback) {
-  let text;
   try {
-    text = fs.readFileSync(file, 'utf8');
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (err) {
     if (err.code === 'ENOENT') return fallback;
     throw new Error(`Could not read ${file}: ${err.message}`);
-  }
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    throw new Error(`Could not parse ${file}: ${err.message}`);
   }
 }
 
@@ -375,7 +380,7 @@ function isUuid(value) {
 function cleanName(value, max = 64) {
   if (typeof value !== 'string') return '';
   return value
-    .replace(/[\u0000-\u001f\u007f-\u009f  ]/g, ' ')
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, max);
@@ -394,7 +399,6 @@ const TABLE = {
   UNAUTHORIZED: [401, 'Missing or invalid credentials.'],
   SESSION_EXPIRED: [401, 'Your session has ended. Connect again.'],
   DEVICE_NOT_PAIRED: [401, 'This device is not paired with this laptop.'],
-  DEVICE_REVOKED: [403, 'This device is no longer paired.'],
   RATE_LIMITED: [429, 'Too many requests. Try again shortly.'],
   PAIR_NOT_FOUND: [404, 'Pairing request not found.'],
   PAIR_EXPIRED: [410, 'The pairing request has expired.'],
@@ -407,8 +411,6 @@ const TABLE = {
   ITEM_NOT_FOUND: [404, 'Item not found.'],
   INTERNAL: [500, 'Something went wrong on the laptop.'],
 };
-
-const CODES = Object.freeze(Object.fromEntries(Object.keys(TABLE).map((code) => [code, code])));
 
 class ApiError extends Error {
   constructor(code, message, { retryAfterMs } = {}) {
@@ -429,7 +431,7 @@ function envelope(err) {
   return { error: { code: err.code, message: err.message } };
 }
 
-module.exports = { ApiError, apiError, envelope, CODES };
+module.exports = { ApiError, apiError, envelope };
 ```
 
 `server/src/config.js`:
@@ -443,6 +445,7 @@ const { readJson } = require('./fsutil');
 
 const DEFAULT_PORTS = Object.freeze({ device: 8765, admin: 8760, discovery: 8766 });
 
+// Constants, not settings: tests override them through `overrides.limits`.
 const DEFAULT_LIMITS = Object.freeze({
   maxFileBytes: 2 * 1024 ** 3,
   maxTextBytes: 1024 * 1024,
@@ -459,7 +462,6 @@ const DEFAULT_LIMITS = Object.freeze({
   maxPairRequestsPerMinutePerIp: 5,
   maxDevices: 20,
   maxFailedAuthPerMinutePerIp: 10,
-  maxRevokedTombstones: 100,
   idempotencyMaxEntries: 200,
   idempotencyTtlMs: 10 * 60 * 1000,
 });
@@ -470,16 +472,14 @@ function defaultHome() {
   return path.join(base, 'FlashPush');
 }
 
+/** `config.json` in the state folder may set only `ports` and `receiveDir` (e.g. when a port is taken). */
 function loadConfig({ home = defaultHome(), overrides = {} } = {}) {
   const file = path.join(home, 'config.json');
-  const fromFile = readJson(file, {});
-  if (fromFile === null || typeof fromFile !== 'object' || Array.isArray(fromFile)) {
-    throw new Error(`${file} must contain a JSON object.`);
-  }
+  const fromFile = readJson(file, {}) || {};
   return {
     home,
     ports: { ...DEFAULT_PORTS, ...fromFile.ports, ...overrides.ports },
-    limits: { ...DEFAULT_LIMITS, ...fromFile.limits, ...overrides.limits },
+    limits: { ...DEFAULT_LIMITS, ...overrides.limits },
     receiveDir:
       overrides.receiveDir ||
       process.env.RECEIVE_DIR ||
@@ -730,7 +730,7 @@ module.exports = {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd server && node --test test/crypto.test.js`
-Expected: PASS (9 tests).
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -751,7 +751,7 @@ git commit -m "feat(server): pairing crypto primitives with known-answer vectors
 - Consumes: `config.loadConfig().paths`, `fsutil`, `validate`
 - Produces:
   - `identity.loadIdentity(paths, { hostname? }) → { laptopId, name }` (creates `identity.json` on first run; throws if the file exists but is invalid)
-  - `tls.loadOrCreateTls(paths, { now? }) → Promise<{ key, cert, fingerprint: Buffer(32), regenerated: boolean }>`
+  - `tls.loadOrCreateTls(paths) → Promise<{ key, cert, fingerprint: Buffer(32), regenerated: boolean }>`
   - `tls.fingerprintOfPem(pem) → Buffer(32)`; `tls.fingerprintOfDer(der) → Buffer(32)`
 
 - [ ] **Step 1: Write the failing tests**
@@ -920,9 +920,7 @@ function tryLoad(paths) {
   try {
     const key = fs.readFileSync(paths.tlsKey, 'utf8');
     const cert = fs.readFileSync(paths.tlsCert, 'utf8');
-    const x509 = new crypto.X509Certificate(cert);
-    if (!x509.checkPrivateKey(crypto.createPrivateKey(key))) return null;
-    return { key, cert, fingerprint: fingerprintOfDer(x509.raw), regenerated: false };
+    return { key, cert, fingerprint: fingerprintOfPem(cert), regenerated: false };
   } catch {
     return null;
   }
@@ -930,13 +928,14 @@ function tryLoad(paths) {
 
 /**
  * Loads the laptop's self-signed EC P-256 certificate, or creates one (valid ~10 years).
- * A regenerated certificate changes the fingerprint, so paired phones will refuse it (CERT_CHANGED).
+ * A regenerated certificate changes the fingerprint, so paired phones will refuse it (CERT_CHANGED);
+ * callers should log `regenerated`.
  */
-async function loadOrCreateTls(paths, { now = () => new Date() } = {}) {
+async function loadOrCreateTls(paths) {
   const existing = tryLoad(paths);
   if (existing) return existing;
 
-  const notBeforeDate = now();
+  const notBeforeDate = new Date();
   const notAfterDate = new Date(notBeforeDate.getTime() + VALID_DAYS * 24 * 3600 * 1000);
   const pems = await selfsigned.generate([{ name: 'commonName', value: 'FlashPush' }], {
     keyType: 'ec',
@@ -956,7 +955,7 @@ module.exports = { loadOrCreateTls, fingerprintOfPem, fingerprintOfDer };
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `cd server && node --test test/identity.test.js test/tls.test.js`
-Expected: PASS (7 tests). If `selfsigned` rejects an option name, check `node_modules/selfsigned/README.md` (options are `keyType`, `curve`, `notBeforeDate`, `notAfterDate`) and fix the call, not the test.
+Expected: PASS. If `selfsigned` rejects an option name, check `node_modules/selfsigned/README.md` (options are `keyType`, `curve`, `notBeforeDate`, `notAfterDate`) and fix the call, not the test.
 
 - [ ] **Step 5: Commit**
 
@@ -975,8 +974,8 @@ git commit -m "feat(server): laptop identity and self-signed EC certificate with
 
 **Interfaces:**
 - Produces:
-  - `ratelimit.createLimiter({ max, windowMs, now?, maxKeys? }) → { isBlocked(key) → {blocked, retryAfterMs}, record(key), attempt(key) → {allowed, retryAfterMs}, reset(key) }`
-  - `idempotency.OperationCache({ max, ttlMs, now? })` with `begin(deviceId, opId) → {state:'new'} | {state:'done', result} | {state:'pending', wait: Promise<{ok:true,result}|{ok:false}>}`, `complete(deviceId, opId, result)`, `fail(deviceId, opId)`, `forgetDevice(deviceId)`
+  - `ratelimit.createLimiter({ max, windowMs, now? }) → { isBlocked(key) → {blocked, retryAfterMs}, record(key), attempt(key) → {allowed, retryAfterMs} }` (`attempt` = check + record; `isBlocked`/`record` are for counting only failures)
+  - `idempotency.OperationCache({ max, ttlMs, now? })` with `begin(deviceId, opId) → {state:'new'} | {state:'pending'} | {state:'done', result}`, `complete(deviceId, opId, result)`, `fail(deviceId, opId)`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1011,32 +1010,21 @@ test('the window slides: old attempts stop counting', () => {
   assert.equal(limiter.attempt('a').allowed, false);
 });
 
-test('keys are independent and reset clears one', () => {
+test('keys are independent', () => {
   const clock = createClock();
   const limiter = createLimiter({ max: 1, windowMs: 1000, now: clock.now });
   assert.equal(limiter.attempt('a').allowed, true);
   assert.equal(limiter.attempt('a').allowed, false);
   assert.equal(limiter.attempt('b').allowed, true);
-  limiter.reset('a');
-  assert.equal(limiter.attempt('a').allowed, true);
 });
 
-test('isBlocked does not record; record does', () => {
+test('isBlocked does not record; record does (used for failed-auth counting)', () => {
   const clock = createClock();
   const limiter = createLimiter({ max: 2, windowMs: 1000, now: clock.now });
   for (let i = 0; i < 10; i++) assert.equal(limiter.isBlocked('a').blocked, false);
   limiter.record('a');
   limiter.record('a');
   assert.equal(limiter.isBlocked('a').blocked, true);
-});
-
-test('memory is bounded: the oldest key is evicted past maxKeys', () => {
-  const clock = createClock();
-  const limiter = createLimiter({ max: 1, windowMs: 60_000, now: clock.now, maxKeys: 2 });
-  limiter.attempt('a');
-  limiter.attempt('b');
-  limiter.attempt('c'); // evicts 'a'
-  assert.equal(limiter.attempt('a').allowed, true);
 });
 ```
 
@@ -1069,25 +1057,20 @@ test('operation ids are scoped per device', () => {
   assert.deepEqual(cache.begin('dev-b', 'op1'), { state: 'new' });
 });
 
-test('a duplicate of an in-flight operation waits for the first to finish', async () => {
+test('a duplicate of an in-flight operation is reported as pending', () => {
   const { cache } = make();
   cache.begin('dev', 'op1');
-  const dup = cache.begin('dev', 'op1');
-  assert.equal(dup.state, 'pending');
-  cache.complete('dev', 'op1', { id: 'x' });
-  assert.deepEqual(await dup.wait, { ok: true, result: { id: 'x' } });
+  assert.deepEqual(cache.begin('dev', 'op1'), { state: 'pending' });
 });
 
-test('a failed operation can be retried and wakes its waiters with ok:false', async () => {
+test('a failed operation can be retried', () => {
   const { cache } = make();
   cache.begin('dev', 'op1');
-  const dup = cache.begin('dev', 'op1');
   cache.fail('dev', 'op1');
-  assert.deepEqual(await dup.wait, { ok: false });
   assert.deepEqual(cache.begin('dev', 'op1'), { state: 'new' });
 });
 
-test('completed operations expire after the ttl', () => {
+test('operations expire after the ttl', () => {
   const { cache, clock } = make({ ttlMs: 1000 });
   cache.begin('dev', 'op1');
   cache.complete('dev', 'op1', { id: 'x' });
@@ -1104,14 +1087,6 @@ test('only the newest `max` completed operations are remembered per device', () 
   assert.deepEqual(cache.begin('dev', 'a'), { state: 'new' }); // evicted
   assert.equal(cache.begin('dev', 'c').state, 'done');
 });
-
-test('forgetDevice drops everything for that device', () => {
-  const { cache } = make();
-  cache.begin('dev', 'op1');
-  cache.complete('dev', 'op1', { id: 'x' });
-  cache.forgetDevice('dev');
-  assert.deepEqual(cache.begin('dev', 'op1'), { state: 'new' });
-});
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -1127,7 +1102,7 @@ Expected: FAIL with `Cannot find module`.
 'use strict';
 
 /** Sliding-window limiter keyed by string (an IP address in practice). */
-function createLimiter({ max, windowMs, now = Date.now, maxKeys = 10_000 }) {
+function createLimiter({ max, windowMs, now = Date.now }) {
   const hits = new Map(); // key -> ascending timestamps
 
   function prune(key, t) {
@@ -1153,7 +1128,6 @@ function createLimiter({ max, windowMs, now = Date.now, maxKeys = 10_000 }) {
     const list = prune(key, t);
     list.push(t);
     hits.set(key, list);
-    if (hits.size > maxKeys) hits.delete(hits.keys().next().value);
   }
 
   function attempt(key) {
@@ -1163,11 +1137,7 @@ function createLimiter({ max, windowMs, now = Date.now, maxKeys = 10_000 }) {
     return { allowed: true, retryAfterMs: 0 };
   }
 
-  function reset(key) {
-    hits.delete(key);
-  }
-
-  return { isBlocked, record, attempt, reset };
+  return { isBlocked, record, attempt };
 }
 
 module.exports = { createLimiter };
@@ -1181,13 +1151,15 @@ module.exports = { createLimiter };
 /**
  * Remembers client-generated operation ids (X-Operation-Id) per device so a retried
  * send (lost response on flaky Wi-Fi) returns the original result instead of duplicating it.
+ * A duplicate that arrives while the first is still running is reported as 'pending'; the API
+ * answers it with RATE_LIMITED + Retry-After and the phone simply retries.
  */
 class OperationCache {
   constructor({ max, ttlMs, now = Date.now }) {
     this.max = max;
     this.ttlMs = ttlMs;
     this.now = now;
-    this.byDevice = new Map(); // deviceId -> Map(opId -> entry)
+    this.byDevice = new Map(); // deviceId -> Map(opId -> { state, result?, at })
   }
 
   _entries(deviceId) {
@@ -1197,12 +1169,7 @@ class OperationCache {
       this.byDevice.set(deviceId, entries);
     }
     const t = this.now();
-    for (const [opId, entry] of entries) {
-      if (t - entry.at >= this.ttlMs) {
-        entries.delete(opId);
-        if (entry.state === 'pending') entry.resolve({ ok: false });
-      }
-    }
+    for (const [opId, entry] of entries) if (t - entry.at >= this.ttlMs) entries.delete(opId);
     return entries;
   }
 
@@ -1210,25 +1177,19 @@ class OperationCache {
     const entries = this._entries(deviceId);
     const entry = entries.get(opId);
     if (!entry) {
-      let resolve;
-      const promise = new Promise((r) => {
-        resolve = r;
-      });
-      entries.set(opId, { state: 'pending', promise, resolve, at: this.now() });
+      entries.set(opId, { state: 'pending', at: this.now() });
       return { state: 'new' };
     }
-    if (entry.state === 'done') return { state: 'done', result: entry.result };
-    return { state: 'pending', wait: entry.promise };
+    return entry.state === 'done' ? { state: 'done', result: entry.result } : { state: 'pending' };
   }
 
   complete(deviceId, opId, result) {
     const entries = this.byDevice.get(deviceId);
     const entry = entries && entries.get(opId);
-    if (!entry || entry.state !== 'pending') return;
+    if (!entry) return;
     entry.state = 'done';
     entry.result = result;
     entry.at = this.now();
-    entry.resolve({ ok: true, result });
     // Keep only the newest `max` completed operations; never evict one still in flight.
     for (const [key, value] of entries) {
       if (entries.size <= this.max) break;
@@ -1238,17 +1199,7 @@ class OperationCache {
 
   fail(deviceId, opId) {
     const entries = this.byDevice.get(deviceId);
-    const entry = entries && entries.get(opId);
-    if (!entry) return;
-    entries.delete(opId);
-    if (entry.state === 'pending') entry.resolve({ ok: false });
-  }
-
-  forgetDevice(deviceId) {
-    const entries = this.byDevice.get(deviceId);
-    if (!entries) return;
-    for (const entry of entries.values()) if (entry.state === 'pending') entry.resolve({ ok: false });
-    this.byDevice.delete(deviceId);
+    if (entries) entries.delete(opId);
   }
 }
 
@@ -1258,7 +1209,7 @@ module.exports = { OperationCache };
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `cd server && node --test test/ratelimit.test.js test/idempotency.test.js`
-Expected: PASS (12 tests).
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -1276,13 +1227,13 @@ git commit -m "feat(server): sliding-window rate limiter and operation-id idempo
 - Test: `server/test/devices.test.js`
 
 **Interfaces:**
-- Consumes: `crypto.{sha256Hex, b64uDecode, b64uEncode, safeEqualHex, SIZES}`, `errors.apiError`, `fsutil`, config `limits.maxDevices`, `limits.maxRevokedTombstones`
+- Consumes: `crypto.{sha256Hex, b64uDecode, b64uEncode, safeEqualHex, SIZES}`, `errors.apiError`, `fsutil`, config `limits.maxDevices`
 - Produces `class DeviceStore({ file, now?, limits })`:
   - `count()`, `has(deviceId)`, `canAdd(deviceId)`, `get(deviceId) → publicDevice|null`, `list() → publicDevice[]`
-  - `add({ deviceId, name, secret: Buffer(32) }) → { replaced: boolean }` (throws `PAIR_LIMIT` when full and not a re-pair; clears any tombstone)
-  - `verify(deviceId, secretB64u) → { result: 'ok'|'bad_secret'|'revoked'|'unknown', device? }`
-  - `touch(deviceId, route)`, `flush()`
-  - `revoke(deviceId) → boolean` (adds tombstone), `remove(deviceId) → boolean` (forget: no tombstone)
+  - `add({ deviceId, name, secret: Buffer(32) }) → { replaced: boolean }` (throws `PAIR_LIMIT` when full and not a re-pair)
+  - `verify(deviceId, secretB64u) → { result: 'ok'|'bad_secret'|'unknown', device? }`
+  - `touch(deviceId, route)` (in memory)
+  - `remove(deviceId) → boolean` (revoke and forget are the same operation)
   - `publicDevice = { deviceId, name, pairedAt, lastSeen, lastRoute }` (never the hash)
 
 - [ ] **Step 1: Write the failing test**
@@ -1361,36 +1312,14 @@ test('re-pairing the same deviceId replaces the secret; the old one stops workin
   assert.equal(store.count(), 1);
 });
 
-test('revoke removes the device and leaves a tombstone until it re-pairs', (t) => {
-  const { store } = setup(t);
-  const secret = c.random(32);
-  store.add({ deviceId: ID_A, name: 'Pixel 7', secret });
-  assert.equal(store.revoke(ID_A), true);
-  assert.equal(store.revoke(ID_A), false);
-  assert.equal(store.verify(ID_A, c.b64uEncode(secret)).result, 'revoked');
-  store.add({ deviceId: ID_A, name: 'Pixel 7', secret });
-  assert.equal(store.verify(ID_A, c.b64uEncode(secret)).result, 'ok');
-});
-
-test('remove (forget) leaves no tombstone', (t) => {
-  const { store } = setup(t);
+test('remove (revoke or forget) deletes the device, so its secret stops working', (t) => {
+  const { store, make } = setup(t);
   const secret = c.random(32);
   store.add({ deviceId: ID_A, name: 'Pixel 7', secret });
   assert.equal(store.remove(ID_A), true);
+  assert.equal(store.remove(ID_A), false);
   assert.equal(store.verify(ID_A, c.b64uEncode(secret)).result, 'unknown');
-});
-
-test('tombstones are capped and survive a restart', (t) => {
-  const { store, make } = setup(t, { maxRevokedTombstones: 2 });
-  const ids = ['1', '2', '3'].map((n) => `cccccccc-0000-4000-8000-00000000000${n}`);
-  const secret = c.random(32);
-  for (const id of ids) {
-    store.add({ deviceId: id, name: 'x', secret });
-    store.revoke(id);
-  }
-  const reloaded = make();
-  assert.equal(reloaded.verify(ids[0], c.b64uEncode(secret)).result, 'unknown'); // oldest tombstone dropped
-  assert.equal(reloaded.verify(ids[2], c.b64uEncode(secret)).result, 'revoked');
+  assert.equal(make().count(), 0);
 });
 
 test('the device limit applies to new devices but not to re-pairs', (t) => {
@@ -1407,15 +1336,14 @@ test('add rejects a secret that is not 32 bytes', (t) => {
   assert.throws(() => store.add({ deviceId: ID_A, name: 'A', secret: Buffer.alloc(8) }), TypeError);
 });
 
-test('touch records last seen and route, persisted by flush', (t) => {
-  const { store, clock, make } = setup(t);
+test('touch records last seen and route (in memory)', (t) => {
+  const { store, clock } = setup(t);
   store.add({ deviceId: ID_A, name: 'A', secret: c.random(32) });
   clock.advance(5000);
   store.touch(ID_A, 'tailscale');
   assert.equal(store.get(ID_A).lastRoute, 'tailscale');
   assert.equal(store.get(ID_A).lastSeen, clock.now());
-  store.flush();
-  assert.equal(make().get(ID_A).lastRoute, 'tailscale');
+  store.touch(ID_B, 'lan'); // unknown device: ignored
 });
 ```
 
@@ -1449,15 +1377,12 @@ class DeviceStore {
     this.file = file;
     this.now = now;
     this.limits = limits;
-    const data = readJson(file, { devices: [], revoked: [] });
+    const data = readJson(file, { devices: [] });
     this.devices = new Map((data.devices || []).map((d) => [d.deviceId, d]));
-    this.revoked = Array.isArray(data.revoked) ? data.revoked : [];
-    this.dirty = false;
   }
 
   _save() {
-    writeJsonAtomic(this.file, { devices: [...this.devices.values()], revoked: this.revoked });
-    this.dirty = false;
+    writeJsonAtomic(this.file, { devices: [...this.devices.values()] });
   }
 
   count() {
@@ -1494,14 +1419,13 @@ class DeviceStore {
       lastSeen: null,
       lastRoute: null,
     });
-    this.revoked = this.revoked.filter((r) => r.deviceId !== deviceId);
     this._save();
     return { replaced };
   }
 
   verify(deviceId, secretB64u) {
     const rec = this.devices.get(deviceId);
-    if (!rec) return { result: this.revoked.some((r) => r.deviceId === deviceId) ? 'revoked' : 'unknown' };
+    if (!rec) return { result: 'unknown' };
     let secret;
     try {
       secret = c.b64uDecode(secretB64u, c.SIZES.secret);
@@ -1512,28 +1436,15 @@ class DeviceStore {
     return { result: 'ok', device: publicView(rec) };
   }
 
+  /** Last-seen bookkeeping lives in memory and is written along with the next add/remove. */
   touch(deviceId, route) {
     const rec = this.devices.get(deviceId);
     if (!rec) return;
     rec.lastSeen = this.now();
     rec.lastRoute = route || rec.lastRoute;
-    this.dirty = true;
   }
 
-  flush() {
-    if (this.dirty) this._save();
-  }
-
-  /** Laptop-side revoke: remove and remember, so that phone gets DEVICE_REVOKED instead of a generic 401. */
-  revoke(deviceId) {
-    if (!this.devices.delete(deviceId)) return false;
-    this.revoked.push({ deviceId, revokedAt: this.now() });
-    while (this.revoked.length > this.limits.maxRevokedTombstones) this.revoked.shift();
-    this._save();
-    return true;
-  }
-
-  /** Phone-side forget: remove without a tombstone. */
+  /** Revoke (laptop side) and forget (phone side) are the same thing: the device is gone. */
   remove(deviceId) {
     if (!this.devices.delete(deviceId)) return false;
     this._save();
@@ -1547,13 +1458,13 @@ module.exports = { DeviceStore };
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd server && node --test test/devices.test.js`
-Expected: PASS (11 tests).
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add server/src/devices.js server/test/devices.test.js
-git commit -m "feat(server): approved-device store (hashed secrets, revoke tombstones, re-pair)" -m "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+git commit -m "feat(server): approved-device store (hashed secrets, remove, re-pair)" -m "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1570,7 +1481,7 @@ git commit -m "feat(server): approved-device store (hashed secrets, revoke tombs
   - `create(deviceId) → { token, expiresAt }` (ends the device's previous session with reason `replaced`)
   - `verify(token) → { deviceId, expiresAt } | null` (extends idle window; ends and returns null when expired)
   - `endByToken(token, reason = 'disconnected') → boolean`, `endForDevice(deviceId, reason) → boolean`, `endAll(reason)`
-  - `isConnected(deviceId) → boolean`, `connectedDeviceIds() → string[]`, `sweep()`
+  - `isConnected(deviceId) → boolean`
   - emits `'end'` with `{ deviceId, reason }` where reason ∈ `replaced | disconnected | revoked | expired | shutdown`
 
 - [ ] **Step 1: Write the failing test**
@@ -1663,23 +1574,7 @@ test('endByToken, endForDevice and endAll', () => {
     { deviceId: 'b', reason: 'revoked' },
     { deviceId: 'c', reason: 'shutdown' },
   ]);
-  assert.deepEqual(store.connectedDeviceIds(), []);
-});
-
-test('sweep ends expired sessions that were never used again', () => {
-  const { store, clock, ended } = make();
-  store.create('dev');
-  clock.advance(25 * HOUR);
-  store.sweep();
-  assert.deepEqual(ended, [{ deviceId: 'dev', reason: 'expired' }]);
-});
-
-test('connectedDeviceIds lists live devices only', () => {
-  const { store, clock } = make();
-  store.create('a');
-  clock.advance(HOUR);
-  store.create('b');
-  assert.deepEqual(store.connectedDeviceIds().sort(), ['a', 'b']);
+  assert.equal(store.isConnected('c'), false);
 });
 ```
 
@@ -1698,17 +1593,14 @@ Expected: FAIL with `Cannot find module '../src/sessions'`.
 const { EventEmitter } = require('node:events');
 const c = require('./crypto');
 
-/**
- * In-memory session tokens, one active session per device.
- * Tokens are indexed by their SHA-256 so lookups do not depend on comparing the raw token.
- */
+/** In-memory session tokens, one active session per device. */
 class SessionStore extends EventEmitter {
   constructor({ idleMs, maxMs, now = Date.now }) {
     super();
     this.idleMs = idleMs;
     this.maxMs = maxMs;
     this.now = now;
-    this.byKey = new Map(); // sha256(token) -> session
+    this.byToken = new Map(); // token -> session
     this.byDevice = new Map(); // deviceId -> session
   }
 
@@ -1717,33 +1609,22 @@ class SessionStore extends EventEmitter {
   }
 
   _end(session, reason) {
-    this.byKey.delete(session.key);
+    this.byToken.delete(session.token);
     if (this.byDevice.get(session.deviceId) === session) this.byDevice.delete(session.deviceId);
     this.emit('end', { deviceId: session.deviceId, reason });
   }
 
-  _lookup(tokenB64u) {
-    let raw;
-    try {
-      raw = c.b64uDecode(tokenB64u, c.SIZES.token);
-    } catch {
-      return null;
-    }
-    return this.byKey.get(c.sha256Hex(raw)) || null;
-  }
-
   create(deviceId) {
     this.endForDevice(deviceId, 'replaced');
-    const raw = c.random(c.SIZES.token);
     const t = this.now();
-    const session = { deviceId, key: c.sha256Hex(raw), createdAt: t, lastUsed: t };
-    this.byKey.set(session.key, session);
+    const session = { deviceId, token: c.b64uEncode(c.random(c.SIZES.token)), createdAt: t, lastUsed: t };
+    this.byToken.set(session.token, session);
     this.byDevice.set(deviceId, session);
-    return { token: c.b64uEncode(raw), expiresAt: this._expiry(session) };
+    return { token: session.token, expiresAt: this._expiry(session) };
   }
 
-  verify(tokenB64u) {
-    const session = this._lookup(tokenB64u);
+  verify(token) {
+    const session = this.byToken.get(token);
     if (!session) return null;
     const t = this.now();
     if (t >= this._expiry(session)) {
@@ -1754,8 +1635,8 @@ class SessionStore extends EventEmitter {
     return { deviceId: session.deviceId, expiresAt: this._expiry(session) };
   }
 
-  endByToken(tokenB64u, reason = 'disconnected') {
-    const session = this._lookup(tokenB64u);
+  endByToken(token, reason = 'disconnected') {
+    const session = this.byToken.get(token);
     if (!session) return false;
     this._end(session, reason);
     return true;
@@ -1769,7 +1650,7 @@ class SessionStore extends EventEmitter {
   }
 
   endAll(reason) {
-    for (const session of [...this.byKey.values()]) this._end(session, reason);
+    for (const session of [...this.byToken.values()]) this._end(session, reason);
   }
 
   isConnected(deviceId) {
@@ -1781,16 +1662,6 @@ class SessionStore extends EventEmitter {
     }
     return true;
   }
-
-  connectedDeviceIds() {
-    return [...this.byDevice.keys()].filter((id) => this.isConnected(id));
-  }
-
-  sweep() {
-    for (const session of [...this.byKey.values()]) {
-      if (this.now() >= this._expiry(session)) this._end(session, 'expired');
-    }
-  }
 }
 
 module.exports = { SessionStore };
@@ -1799,7 +1670,7 @@ module.exports = { SessionStore };
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd server && node --test test/sessions.test.js`
-Expected: PASS (9 tests).
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -1818,12 +1689,11 @@ git commit -m "feat(server): session store (one per device, idle and absolute ex
 
 **Interfaces:**
 - Consumes: `DeviceStore` (`has`, `canAdd`, `add`), `crypto.*`, `errors.apiError`, `validate.{isUuid, cleanName}`, `ratelimit.createLimiter`, config `limits`
-- Produces `class PairingManager extends EventEmitter ({ devices, fingerprint: Buffer(32), limits, now?, rng? })`:
+- Produces `class PairingManager extends EventEmitter ({ devices, fingerprint: Buffer(32), limits, now? })`:
   - `request({ deviceId, deviceName, commit, remoteIp, route }) → { requestId, nl }` (both base64url)
   - `reveal({ requestId, np }) → {}`
   - `approve(requestId) → { deviceId, replaced }`; `deny(requestId)`
-  - `status({ requestId, deviceId, proof }) → { state:'pending' } | { state:'approved', secret }`; throws `PAIR_NOT_FOUND` / `PAIR_EXPIRED` / `PAIR_DENIED`
-  - `waitForChange(requestId, timeoutMs) → Promise<void>`
+  - `status({ requestId, deviceId, proof }) → { state:'pending' } | { state:'approved', secret }` (the phone polls it every 1-2 s); throws `PAIR_NOT_FOUND` / `PAIR_EXPIRED` / `PAIR_DENIED`
   - `listPending() → view[]` where `view = { requestId, deviceId, deviceName, sas, sasDisplay, createdAt, expiresAt, remoteIp, route, isRepair }`
   - `sweep()`
   - events: `'pending'` (view, when a request becomes visible), `'resolved'` (`{ requestId, deviceId, state:'approved'|'denied' }`), `'device-replaced'` (`{ deviceId }`)
@@ -2074,22 +1944,6 @@ test('the device limit is enforced at request time for new devices', (t) => {
   begin(pairing, newPhone(fingerprint, first.deviceId), { remoteIp: '10.0.0.6' }); // a re-pair is still allowed
 });
 
-test('waitForChange resolves as soon as the request is approved, and times out otherwise', async (t) => {
-  const { pairing, fingerprint } = setup(t);
-  const phone = newPhone(fingerprint);
-  const { requestId } = revealed(pairing, phone);
-
-  const started = Date.now();
-  const waiting = pairing.waitForChange(requestId, 5000);
-  setTimeout(() => pairing.approve(requestId), 20);
-  await waiting;
-  assert.ok(Date.now() - started < 2000, 'resolved by the approval, not by the timeout');
-
-  const timedOut = Date.now();
-  await pairing.waitForChange(requestId, 30);
-  assert.ok(Date.now() - timedOut >= 25);
-});
-
 test('sweep removes expired requests and wipes expired secrets', (t) => {
   const { pairing, fingerprint, clock } = setup(t);
   const a = newPhone(fingerprint);
@@ -2127,18 +1981,17 @@ const isOpen = (rec) => rec.state === 'awaiting_reveal' || rec.state === 'pendin
 /**
  * The pairing state machine (spec §3.2). A record goes:
  *   awaiting_reveal → pending → approved | denied        (or is removed on expiry / mismatch)
- * The phone commits to its nonce first; the laptop picks its own nonce after seeing the commit.
+ * `expiresAt` is the single deadline for the record's current state:
+ * reveal window (10 s) → request lifetime (2 min from creation) → secret re-fetch window (60 s from approval).
  */
 class PairingManager extends EventEmitter {
-  constructor({ devices, fingerprint, limits, now = Date.now, rng = c.random }) {
+  constructor({ devices, fingerprint, limits, now = Date.now }) {
     super();
     this.devices = devices;
     this.fingerprint = fingerprint;
     this.limits = limits;
     this.now = now;
-    this.rng = rng;
     this.requests = new Map(); // requestId -> record
-    this.waiters = new Map(); // requestId -> Set<() => void>
     this.limiter = createLimiter({ max: limits.maxPairRequestsPerMinutePerIp, windowMs: 60_000, now });
   }
 
@@ -2160,22 +2013,12 @@ class PairingManager extends EventEmitter {
   }
 
   _isExpired(rec) {
-    const t = this.now();
-    if (rec.state === 'awaiting_reveal') return t >= rec.revealBy;
-    if (rec.state === 'pending') return t >= rec.expiresAt;
-    if (rec.state === 'approved') return t >= rec.secretUntil;
-    return t >= rec.expiresAt; // denied
-  }
-
-  _notify(requestId) {
-    const set = this.waiters.get(requestId);
-    if (set) for (const wake of [...set]) wake();
+    return this.now() >= rec.expiresAt;
   }
 
   _delete(rec) {
     if (rec.secret) rec.secret.fill(0);
     this.requests.delete(rec.requestId);
-    this._notify(rec.requestId);
   }
 
   /** Looks a request up, treating an expired one as gone (throws PAIR_EXPIRED once, then it no longer exists). */
@@ -2219,22 +2062,20 @@ class PairingManager extends EventEmitter {
 
     const t = this.now();
     const rec = {
-      requestId: c.b64uEncode(this.rng(c.SIZES.requestId)),
+      requestId: c.b64uEncode(c.random(c.SIZES.requestId)),
       deviceId,
       deviceName: name,
       commit: commitBuf,
-      nl: this.rng(c.SIZES.nonce),
+      nl: c.random(c.SIZES.nonce),
       np: null,
       state: 'awaiting_reveal',
       sas: null,
       createdAt: t,
-      revealBy: t + this.limits.pairRevealWindowMs,
-      expiresAt: t + this.limits.pairExpiryMs,
+      expiresAt: t + this.limits.pairRevealWindowMs,
       remoteIp: remoteIp || 'unknown',
       route: route || 'other',
       isRepair: this.devices.has(deviceId),
       secret: null,
-      secretUntil: 0,
     };
     this.requests.set(rec.requestId, rec);
     return { requestId: rec.requestId, nl: c.b64uEncode(rec.nl) };
@@ -2256,11 +2097,15 @@ class PairingManager extends EventEmitter {
     rec.np = npBuf;
     rec.sas = c.sasCode(this.fingerprint, npBuf, rec.nl);
     rec.state = 'pending';
+    rec.expiresAt = rec.createdAt + this.limits.pairExpiryMs;
     this.emit('pending', this._view(rec));
     return {};
   }
 
-  /** Result of a pairing request. Every failure to prove knowledge of np is the same PAIR_NOT_FOUND. */
+  /**
+   * Result of a pairing request; the phone polls this every 1-2 s.
+   * Every failure to prove knowledge of np is the same PAIR_NOT_FOUND.
+   */
   status({ requestId, deviceId, proof }) {
     const rec = typeof requestId === 'string' ? this.requests.get(requestId) : undefined;
     if (!rec || !rec.np || deviceId !== rec.deviceId) throw apiError('PAIR_NOT_FOUND');
@@ -2285,25 +2130,6 @@ class PairingManager extends EventEmitter {
     return { state: 'pending' };
   }
 
-  /** Resolves when the request changes state, or after timeoutMs (used for long-polling). */
-  waitForChange(requestId, timeoutMs) {
-    return new Promise((resolve) => {
-      let set = this.waiters.get(requestId);
-      if (!set) {
-        set = new Set();
-        this.waiters.set(requestId, set);
-      }
-      const wake = () => {
-        clearTimeout(timer);
-        set.delete(wake);
-        if (!set.size) this.waiters.delete(requestId);
-        resolve();
-      };
-      const timer = setTimeout(wake, timeoutMs);
-      set.add(wake);
-    });
-  }
-
   // ---- laptop-facing -------------------------------------------------------
 
   listPending() {
@@ -2317,15 +2143,14 @@ class PairingManager extends EventEmitter {
   approve(requestId) {
     const rec = this._get(requestId);
     if (rec.state !== 'pending') throw apiError('PAIR_NOT_FOUND');
-    const secret = this.rng(c.SIZES.secret);
+    const secret = c.random(c.SIZES.secret);
     const { replaced } = this.devices.add({ deviceId: rec.deviceId, name: rec.deviceName, secret });
     rec.state = 'approved';
     rec.secret = secret;
-    rec.secretUntil = this.now() + this.limits.pairSecretWindowMs;
+    rec.expiresAt = this.now() + this.limits.pairSecretWindowMs;
     rec.isRepair = replaced;
     if (replaced) this.emit('device-replaced', { deviceId: rec.deviceId });
     this.emit('resolved', { requestId, deviceId: rec.deviceId, state: 'approved' });
-    this._notify(requestId);
     return { deviceId: rec.deviceId, replaced };
   }
 
@@ -2334,7 +2159,6 @@ class PairingManager extends EventEmitter {
     if (rec.state !== 'pending') throw apiError('PAIR_NOT_FOUND');
     rec.state = 'denied';
     this.emit('resolved', { requestId, deviceId: rec.deviceId, state: 'denied' });
-    this._notify(requestId);
   }
 
   sweep() {
@@ -2348,7 +2172,7 @@ module.exports = { PairingManager };
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd server && node --test test/pairing.test.js`
-Expected: PASS (19 tests).
+Expected: PASS.
 
 - [ ] **Step 5: Run the whole suite**
 
@@ -2436,6 +2260,7 @@ Both screens show the SAS; the user approves only if they match.
 | Open requests | max 3; a device's new request replaces its old one |
 | Requests per IP | 5 per minute |
 | Paired devices | max 20 |
+| Status polling | the phone polls every 1-2 s (no long-poll) |
 
 ## Why the commit–reveal matters
 
@@ -2477,8 +2302,9 @@ Append to `docs/decisions.md`:
 |---|---|---|
 | Unrevealed pair requests | expire after 10 s (`pairRevealWindowMs`) | the phone reveals immediately; otherwise 3 unrevealed requests could block pairing for 2 minutes |
 | Certificate library | `selfsigned` 5.x (`keyType: 'ec'`, `notAfterDate`) | pure JS, supports P-256; `days` is not an option in this version |
-| Timing/randomness | injectable `now` and `rng` | every expiry rule is tested with a fake clock, no sleeping |
+| Timing | injectable `now` | every expiry rule is tested with a fake clock, no sleeping |
 | State files | `%APPDATA%\FlashPush`, atomic JSON writes | survives crashes; independent of the launch directory |
+| Simplifications from the over-engineering review | see the "over-engineering review of Plan 1A" section of this file | fewer moving parts before anything is built |
 ```
 
 In `docs/README.md`, change the `pairing.md` row so it links to the written file, e.g. `| [pairing.md](pairing.md) | exact pairing crypto + test vectors | written (Plan 1A) |`, and keep `connection-state.md`, `transfers.md` as "written during implementation". Add a row for the plans: `| [superpowers/plans/](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans (index + Plan 1A written) | Plan 1A done |` (replace the existing plans row).
@@ -2507,8 +2333,8 @@ git commit -m "docs: pairing protocol, reveal window, Plan 1A decisions and chan
 
 ## Self-review
 
-**Spec coverage (spec §2/§3/§4.1–4.2):** identity and certificate (§3.1) → Task 3; sizes and encodings (§3.1–3.2) → Task 2; pairing flow, proof, re-pair, limits (§3.2) → Task 7; sessions, one per device, expiry (§3.3) → Task 6; hashed secrets, revoke tombstones, forget (§3.3) → Task 5; rate limits (§3.4) → Tasks 4 and 7; error envelope and codes (§4.1) → Task 1; idempotency (§4.2) → Task 4. HTTP routes, discovery, addresses, transfers, admin API, tray and everything in §5–§10 are **out of scope here** and belong to Plans 1B–6 (see the plan index). The 10 s reveal window is an addition to the spec, recorded in Task 8.
+**Spec coverage (spec §2/§3/§4.1–4.2):** identity and certificate (§3.1) → Task 3; sizes and encodings (§3.1–3.2) → Task 2; pairing flow, proof, re-pair, limits (§3.2) → Task 7; sessions, one per device, expiry (§3.3) → Task 6; hashed secrets, remove (revoke and forget), re-pair (§3.3) → Task 5; rate limits (§3.4) → Tasks 4 and 7; error envelope and codes (§4.1) → Task 1; idempotency (§4.2) → Task 4. HTTP routes, discovery, addresses, transfers, admin API, tray and everything in §5–§10 are **out of scope here** and belong to Plans 1B–6 (see the plan index). The 10 s reveal window is an addition to the spec, recorded in Task 8.
 
 **Placeholder scan:** none; every step has complete code or exact text.
 
-**Type consistency:** `crypto.sha256Hex` is used by `devices.js`, `sessions.js` and the tests (there is no `hashSecret`). `DeviceStore` methods used by `PairingManager` are `has`, `canAdd`, `add`. Event names are `pending`, `resolved`, `device-replaced` (pairing) and `end` (sessions). Limit names in `config.js` match those used in `devices.js`, `pairing.js` and the tests (`maxDevices`, `maxRevokedTombstones`, `maxPendingPairings`, `maxPairRequestsPerMinutePerIp`, `pairExpiryMs`, `pairRevealWindowMs`, `pairSecretWindowMs`).
+**Type consistency:** `crypto.sha256Hex` is used by `devices.js`, `sessions.js` and the tests (there is no `hashSecret`). `DeviceStore` methods used by `PairingManager` are `has`, `canAdd`, `add`. Event names are `pending`, `resolved`, `device-replaced` (pairing) and `end` (sessions). `DeviceStore.remove` is the only way a device disappears (there is no `revoke`). Limit names in `config.js` match those used in `devices.js`, `pairing.js` and the tests (`maxDevices`, `maxPendingPairings`, `maxPairRequestsPerMinutePerIp`, `pairExpiryMs`, `pairRevealWindowMs`, `pairSecretWindowMs`).
