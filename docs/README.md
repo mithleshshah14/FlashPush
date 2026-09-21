@@ -7,6 +7,7 @@
 | [superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md](superpowers/specs/2026-09-21-pairing-autostart-tailscale-design.md) | v2 design: pairing, security, autostart/tray, Tailscale (revision 2) | approved 2026-09-21 |
 | [FlashPush_v2_design_review_suggestions.md](FlashPush_v2_design_review_suggestions.md) | external review of the spec; triage in decisions.md | input |
 | [pairing.md](pairing.md) | exact pairing crypto, message flow, limits and test vectors | written (Plan 1A) |
+| [protocol.md](protocol.md) | HTTP API reference for the device API (admin API and discovery follow) | written (Plan 1B-ii-a) |
 | [transfers.md](transfers.md) | file lifecycle, limits, path safety, retention, per-phone history | written (Plan 1B-i) |
 | connection-state.md | phone/laptop state machines and reconnect rules | written during implementation |
 | [superpowers/plans/2026-09-21-v2-plan-index.md](superpowers/plans/2026-09-21-v2-plan-index.md) | implementation plans: index of 7 plans, with Plan 1A (server security core) written in full | Plan 1A done (77 tests); 1B next |

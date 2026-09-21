@@ -33,6 +33,11 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed (design feedback)
 - Mobile header shows two status icons (Wi-Fi green/grey, connection green/grey) instead of "Connected/Disconnected" text (spec §9). Laptop screens approved; dark and light modes kept.
 
+### Built (Plan 1B-ii-a)
+- `http.js` (JSON in/out, error envelope, router, SSE helper) and `deviceApi.js`: the whole phone-facing `/v1` API: hello, pairing (request / reveal / status with proof), sessions (connect, disconnect, forget), per-phone history, text and file upload with `X-Operation-Id` idempotency, downloads (inline only for non-SVG images), live events with the `expired` event, failed-auth rate limit. New error codes `NOT_FOUND` and `FORBIDDEN`; sessions emit `start`.
+- Server suite is now **149 tests, all passing**, including 25 that drive the API over real HTTP.
+- `docs/protocol.md`: every route, auth scheme, error code, idempotency rule and limit.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

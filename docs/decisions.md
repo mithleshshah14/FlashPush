@@ -102,3 +102,16 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Tailscale route | Wi-Fi icon grey, link icon green, subtitle "via Tailscale" | the user asked for two icons only; the route stays visible without a third icon (assumption, easy to change) |
 | Accessibility | different icon shapes plus accessible labels | colour must not be the only signal |
 | Laptop UI | approved as designed; keep both dark and light modes | requested |
+
+## Plan 1B-ii-a — device API
+
+| Decision | Choice | Why |
+|---|---|---|
+| Shape | `createDeviceApi(deps) → { handler, closeAll }`, a plain request handler | tested over plain HTTP in milliseconds; mounted on HTTPS in Plan 1B-ii-b, where TLS is covered by the end-to-end test |
+| New error codes | `NOT_FOUND` (404), `FORBIDDEN` (403) | unknown routes and the admin guard need a code that is not a domain error |
+| `GET /v1/items` | returns `{ "items": [...] }` | leaves room for paging fields later without a breaking change |
+| Wrong secret vs unknown device | `UNAUTHORIZED` vs `DEVICE_NOT_PAIRED` | the phone only stops retrying and offers Re-pair when the laptop truly does not know it |
+| SVG | never served inline | an SVG can carry script; only raster images may be `inline` |
+| Duplicate in-flight transfer | `429` + `Retry-After: 1` | no promise plumbing; the phone retries and gets the stored result |
+| Session `start` event | added to `SessionStore` | the admin UI refreshes when a phone connects |
+| Test harness | real modules, plain HTTP, `fetch`, phone flow helper `pairDevice` | every route is exercised over the wire, not by calling functions |
