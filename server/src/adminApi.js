@@ -5,23 +5,15 @@ const { apiError } = require('./errors');
 const { saveUpload } = require('./transfers');
 const { isUuid } = require('./validate');
 const web = require('./http');
+const { serveFile } = require('./static');
 
 const LOOPBACK = new Set(['127.0.0.1', '::1']);
-const PAGE_HEADERS = {
-  'Content-Type': 'text/html; charset=utf-8',
-  'Cache-Control': 'no-store',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Referrer-Policy': 'no-referrer',
-  'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
-};
 
 /**
  * The loopback admin API. The guard is a browser cross-site defence, not authentication:
  * anything running as the logged-in user on this laptop can still call it.
  */
-function createAdminApi({ identity, devices, sessions, pairing, store, limits, receiveDir, outboxDir, addresses, getPorts, bus, notify, pageHtml, log = console.error }) {
+function createAdminApi({ identity, devices, sessions, pairing, store, limits, receiveDir, outboxDir, addresses, getPorts, bus, notify, files, log = console.error }) {
   const streams = new Set();
   const laptop = { id: identity.laptopId, name: identity.name };
 
@@ -50,11 +42,6 @@ function createAdminApi({ identity, devices, sessions, pairing, store, limits, r
     if (all.length === 1) return all[0].deviceId;
     throw apiError('BAD_REQUEST', all.length ? 'deviceId is required when several phones are paired.' : 'No phone is paired yet.');
   }
-
-  const page = (req, res) => {
-    res.writeHead(200, { ...PAGE_HEADERS, 'Content-Length': Buffer.byteLength(pageHtml) });
-    res.end(pageHtml);
-  };
 
   const ping = (req, res) => web.sendJson(res, 200, { app: 'flashpush-admin', v: 1 });
 
@@ -144,7 +131,6 @@ function createAdminApi({ identity, devices, sessions, pairing, store, limits, r
   }
 
   const route = web.createRouter([
-    ['GET', '/', page],
     ['GET', '/admin/ping', ping],
     ['GET', '/admin/state', state],
     ['GET', '/admin/events', openEvents],
@@ -162,6 +148,8 @@ function createAdminApi({ identity, devices, sessions, pairing, store, limits, r
     try {
       guard(req);
       const url = new URL(req.url, 'http://localhost');
+      const file = req.method === 'GET' ? files.get(url.pathname) : undefined;
+      if (file) return serveFile(res, file);
       const match = route(req.method, url.pathname);
       if (!match) throw apiError('NOT_FOUND');
       await match.handler(req, res, { params: match.params, url });

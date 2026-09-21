@@ -30,17 +30,6 @@ test('the guard rejects a foreign Host, a foreign Origin, cross-site fetches and
   assert.equal((await env.call('GET', '/admin/ping', { host: `localhost:${env.adminPort}` })).status, 200);
 });
 
-test('the admin page is served with a strict CSP and anti-framing headers', async (t) => {
-  const env = await startAdmin(t);
-  const res = await env.call('GET', '/');
-  assert.equal(res.status, 200);
-  assert.match(res.headers['content-type'], /^text\/html/);
-  assert.match(res.headers['content-security-policy'], /default-src 'self'/);
-  assert.match(res.headers['content-security-policy'], /frame-ancestors 'none'/);
-  assert.equal(res.headers['x-frame-options'], 'DENY');
-  assert.equal(res.headers['x-content-type-options'], 'nosniff');
-});
-
 test('state lists the laptop, addresses, pending requests, devices with connection status, and items', async (t) => {
   const env = await startAdmin(t);
   const phone = env.addPhone('Pixel 7');

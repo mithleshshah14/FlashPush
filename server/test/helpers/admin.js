@@ -12,6 +12,8 @@ const { SessionStore } = require('../../src/sessions');
 const { PairingManager } = require('../../src/pairing');
 const { ItemStore } = require('../../src/store');
 const { createAdminApi } = require('../../src/adminApi');
+const { loadPublicFiles } = require('../../src/static');
+const { makePublicDir } = require('./public-dir');
 const { tmpDir } = require('./tmp');
 
 /** Mounts the real admin API on a loopback HTTP server. */
@@ -41,7 +43,7 @@ async function startAdmin(t, limitOverrides = {}) {
     getPorts: () => ({ ...ports }),
     bus,
     notify: () => bus.emit('changed'),
-    pageHtml: '<!doctype html><title>test</title>',
+    files: loadPublicFiles(makePublicDir(path.join(dir, 'public'))),
     log: () => {},
   });
   const server = http.createServer(api.handler);
