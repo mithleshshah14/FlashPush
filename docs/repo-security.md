@@ -64,13 +64,21 @@ Read back from GitHub after applying:
 
 | Setting | State |
 |---|---|
-| `main` and `develop` | protected: pull request required, **1 approval**, code-owner review, stale approvals dismissed, conversations must be resolved, **no force pushes, no deletions**. The owner (admin) can still bypass, because a solo maintainer cannot approve their own pull request. The working `feature/*` branches are deliberately not protected. |
+| `main` and `develop` | protected: a pull request is required, **no approval and no code-owner review** (see below), **no force pushes, no deletions**. The working `feature/*` branches are deliberately not protected. |
 | Secret scanning + push protection | on (GitHub enables them for public repositories) |
 | Private vulnerability reporting | on |
 | Dependabot alerts | on |
 | Wiki, Projects | off (Issues stay on, forking stays on) |
 | Collaborators | none (only the owner) |
 | Visibility | public |
+
+### Why no required approval
+
+The first setup required 1 approval plus a code-owner review. In a repository with one maintainer that can never be satisfied (GitHub does not let an author approve their own pull request), so every merge needed the owner "bypass" and it protected nothing. What keeps outsiders out is that they have **no write access**: they can only open pull requests from forks, and only someone with write access can merge. The rule was relaxed to *pull request required, 0 approvals*, on `main` and `develop`. **If you ever add a collaborator with write access, turn approvals back on** (Settings → Branches, or `required_approving_review_count: 1`).
+
+### Squash merges and the feature branch
+
+Merging a pull request with **Squash and merge** replaces its commits by one commit on the target branch: `develop` and `main` on GitHub show one commit for the whole first feature, and the detailed history (112 commits) exists only on `feature/v2-pairing-autostart-tailscale`. **Keep that branch** (do not use "Delete branch"), or use **Create a merge commit** instead of squash for future pull requests.
 
 Two-factor authentication on the GitHub account could not be verified through the API with the current token scopes: check it in Settings → Password and authentication.
 
