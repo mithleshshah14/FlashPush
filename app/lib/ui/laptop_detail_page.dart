@@ -27,7 +27,7 @@ class LaptopDetailPage extends StatefulWidget {
   final String laptopId;
   final PlatformActions actions;
 
-  /// Called with the address the laptop had, after it was forgotten, so pairing can start again.
+  /// Called with the laptop's last address, so pairing can start again (the old pairing is replaced on success).
   final void Function(String host, int port) onRePair;
   final bool showBack;
 
@@ -50,8 +50,8 @@ class _LaptopDetailPageState extends State<LaptopDetailPage> {
     if (!opened) messenger.showSnackBar(const SnackBar(content: Text('Could not open the link.')));
   }
 
-  Future<void> _rePair() async {
-    final address = await widget.controller.forget(widget.laptopId);
+  void _rePair() {
+    final address = widget.controller.addressOf(widget.laptopId);
     if (address != null) widget.onRePair(address.host, address.port);
   }
 

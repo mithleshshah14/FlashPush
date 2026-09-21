@@ -170,15 +170,21 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     return connection;
   }
 
-  /// Forgets the laptop everywhere. Returns where it was, so the user can pair again (Re-pair).
-  Future<LaptopAddress?> forget(String id) async {
+  /// Where to pair again with a laptop (Re-pair). A successful pairing replaces the old credentials;
+  /// cancelling leaves everything as it was.
+  LaptopAddress? addressOf(String id) {
+    final laptop = _connections[id]?.laptop;
+    if (laptop == null) return null;
+    return laptop.addresses.where((a) => a.host == laptop.lastHost).firstOrNull ?? laptop.addresses.firstOrNull;
+  }
+
+  /// Forgets the laptop everywhere: its credentials, its history and its row.
+  Future<void> forget(String id) async {
     final connection = _connections.remove(id);
-    if (connection == null) return null;
-    final last = connection.laptop.addresses.where((a) => a.host == connection.laptop.lastHost).firstOrNull ?? connection.laptop.addresses.firstOrNull;
+    if (connection == null) return;
     await connection.forget();
     connection.dispose();
     notifyListeners();
-    return last;
   }
 
   // ---- settings -----------------------------------------------------------------------

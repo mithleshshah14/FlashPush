@@ -68,15 +68,21 @@ void main() {
     expect(s.store.laptop('laptop-a')!.addresses.map((a) => a.host), ['192.168.1.6', '192.168.1.99']);
   });
 
-  test('forget wipes credentials and history, drops the row, and says where the laptop was', () async {
+  test('forget wipes credentials and history and drops the row', () async {
     final s = await setup();
     await s.app.connect('laptop-a');
-    final where = await s.app.forget('laptop-a');
-    expect(where!.host, '192.168.1.6');
+    await s.app.forget('laptop-a');
     expect(s.app.rows.map((r) => r.id), ['laptop-b']);
     expect(await s.store.credentialsFor('laptop-a'), isNull);
     expect(await s.cache.load('laptop-a'), isEmpty);
-    expect(await s.app.forget('laptop-a'), isNull);
+    await s.app.forget('laptop-a'); // forgetting twice is harmless
+  });
+
+  test('addressOf gives the last verified address for Re-pair, without forgetting anything', () async {
+    final s = await setup();
+    expect(s.app.addressOf('laptop-a')!.host, '192.168.1.6');
+    expect(s.app.addressOf('unknown'), isNull);
+    expect(await s.store.credentialsFor('laptop-a'), isNotNull);
   });
 
   test('finishing a pairing saves the credentials and connects at once', () async {

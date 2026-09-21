@@ -229,7 +229,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     expect(d.rePaired.single, ('192.168.1.6', 8765), reason: 'pairing restarts at the same address');
-    expect(d.s.store.laptops, isEmpty);
+    expect(d.s.store.laptops, isNotEmpty, reason: 'nothing is forgotten until the new pairing succeeds');
   });
 
   testWidgets('a changed identity warns and offers Forget and pair again', (tester) async {

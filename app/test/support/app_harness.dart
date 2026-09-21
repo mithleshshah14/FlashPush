@@ -23,7 +23,7 @@ const laptopB = Laptop(id: 'laptop-b', name: 'Studio-Laptop', addresses: [Laptop
 Credentials creds() => Credentials(secret: 'secret', fingerprint: Uint8List(32));
 
 class Setup {
-  Setup(this.app, this.store, this.settings, this.cache, this.netA, this.netB, this.discovered, this.secrets);
+  Setup(this.app, this.store, this.settings, this.cache, this.netA, this.netB, this.discovered, this.secrets, this.scans);
 
   final AppController app;
   final LaptopStore store;
@@ -33,6 +33,9 @@ class Setup {
   final FakeNetwork netB;
   final List<DiscoveredLaptop> discovered;
   final MemorySecretStore secrets;
+
+  /// How many discovery scans have run (a one-element list so the closure can count).
+  final List<int> scans;
 }
 
 Future<Setup> setup({
@@ -61,7 +64,11 @@ Future<Setup> setup({
     ..laptopName = 'Studio-Laptop'
     ..sessionAddresses = const [LaptopAddress(host: '192.168.2.6', port: 8765, kind: 'lan')];
   final discovered = <DiscoveredLaptop>[];
-  final discovery = DiscoveryController(() async => [...discovered], wait: (d) async {}, retryDelays: const []);
+  final scans = [0];
+  final discovery = DiscoveryController(() async {
+    scans[0]++;
+    return [...discovered];
+  }, wait: (d) async {}, retryDelays: const []);
   final app = AppController(
     store: store,
     settings: settings,
@@ -72,7 +79,7 @@ Future<Setup> setup({
   );
   await app.init();
   addTearDown(app.dispose);
-  return Setup(app, store, settings, cache, netA, netB, discovered, secrets);
+  return Setup(app, store, settings, cache, netA, netB, discovered, secrets, scans);
 }
 
 /// A themed app around [child], the way the real app is set up.
