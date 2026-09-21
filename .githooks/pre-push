@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks a push that would publish a secret or a sensitive file (anywhere in the history).
+# Enable once per clone:  git config core.hooksPath .githooks
+exec python scripts/audit-secrets.py --quiet
