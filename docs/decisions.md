@@ -299,3 +299,13 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | Revisit when | a collaborator with write access is added | then require approvals again |
 | Squash merges | the first feature was squash-merged; its 112-commit history is kept on the feature branch | keep the branch, or use merge commits |
 | Local branches | local `develop` and `main` were reset/fast-forwarded to GitHub after verifying identical content and that the detailed history is on the pushed feature branch | keep local and remote aligned after squash merges |
+
+## 2026-09-22 — license: GNU GPL v3 (user decision)
+
+| Decision | Choice | Why |
+|---|---|---|
+| License | **GPL-3.0** (`LICENSE` is the unmodified official text; SPDX `GPL-3.0-only` in `server/package.json`) | requested; anyone may use and change FlashPush, but a distributed derivative must stay open source, so it cannot be repackaged as a closed product |
+| Contributions | a pull request means the contribution is licensed under GPL v3 too (stated in `CONTRIBUTING.md`) | inbound = outbound, no separate agreement needed |
+| "only" vs "or later" | `GPL-3.0-only`; changing to `GPL-3.0-or-later` later is possible while the owner holds the copyright | keeps exactly the version the owner chose |
+| Dependencies | Flutter/Dart packages (BSD/MIT/Apache) and `selfsigned` (MIT) are compatible with GPL v3 and keep their own licenses | no conflict |
+| 2FA | enabled on the owner account (confirmed by the owner) | account security for a public repository |
