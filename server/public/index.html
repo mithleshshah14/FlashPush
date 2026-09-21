@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Dashboard · FlashPush</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/app.css">
+<script type="module" src="assets/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#/dashboard">
+      <img src="assets/favicon.png" alt="" width="32" height="32">
+      <span>FlashPush</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a class="nav-link" href="#/dashboard" data-view="dashboard"><span data-icon="dashboard"></span><span>Dashboard</span></a>
+      <a class="nav-link" href="#/approvals" data-view="approvals"><span data-icon="shield"></span><span>Approvals</span><span class="badge" id="approvals-badge" hidden>0</span></a>
+      <a class="nav-link" href="#/devices" data-view="devices"><span data-icon="devices"></span><span>Devices</span></a>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="laptop-name" id="laptop-name">This laptop</span>
+      <span class="status-pill" id="status-pill" data-tone="ok"><span class="dot" aria-hidden="true"></span><span id="status-label">Running</span></span>
+      <button class="icon-button" id="theme-toggle" type="button"></button>
+    </div>
+  </aside>
+  <div class="content">
+    <div class="banner" id="offline-banner" role="status" hidden>Can't reach FlashPush on this laptop. Trying again…</div>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div class="visually-hidden" id="live-region" aria-live="polite"></div>
+<noscript>FlashPush needs JavaScript to show this page.</noscript>
+</body>
+</html>

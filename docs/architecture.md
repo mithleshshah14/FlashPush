@@ -34,7 +34,7 @@ Ports can be changed in `config.json` (`{"ports":{"device":9000}}`) when another
 | `transfers.js` | safe streamed uploads |
 | `http.js` | JSON in/out, error envelope, router, SSE, file streaming |
 | `deviceApi.js` | the phone-facing `/v1` routes |
-| `adminApi.js` + `public/admin.html` | loopback admin routes and the (temporary) page |
+| `adminApi.js`, `static.js` + `public/` | loopback admin routes; the allowlisted static server and the Stitch-designed UI (see [admin-ui.md](admin-ui.md)) |
 | `cli.js` | the entry point: `npm start`, `--no-tray`, `--install-autostart`, `--uninstall-autostart`, `--status`; `runApp()` starts the app tolerantly, then the tray |
 | `lifecycle.js` | the `starting / running / degraded / stopped` state, human reasons for failed listens, the in-flight request tracker used by graceful stop |
 | `singleInstance.js` | asks `127.0.0.1:<admin port>/admin/ping` whether FlashPush already runs |
@@ -42,6 +42,9 @@ Ports can be changed in `config.json` (`{"ports":{"device":9000}}`) when another
 | `tray-protocol.js`, `tray.js`, `shell.js` | the JSON-line protocol and menu model (pure), the controller that runs `tray/tray.ps1`, and the wiring from app events to the tray |
 | `autostart.js` | generates and installs/removes the hidden `FlashPush.vbs` launcher (Startup folder and Start Menu) |
 | `addresses.js` | also reads the MagicDNS name (`tailscale status --json`, best effort) |
+
+| `adminApi.js` | loopback admin routes; also serves the UI files from the allowlist |
+| `static.js` + `public/` | in-memory allowlist of the admin UI files (`index.html`, `assets/*`), served with the strict CSP; see [admin-ui.md](admin-ui.md) |
 
 Dependencies only point downwards: the two APIs depend on the stores and helpers; the stores never depend on HTTP.
 
@@ -107,3 +110,9 @@ tray.ps1 (PowerShell, NotifyIcon)  <-- JSON lines over stdin/stdout -->  tray.js
 - Test-only switch: `createApp({ overrides: { bindHost: '127.0.0.1' } })` keeps the device API and discovery on the loopback interface. Production listens on every interface because phones connect from the network.
 
 Operating instructions: [setup.md](setup.md). Manual checks: [testing.md](testing.md).
+
+Windows tray, notifications, autostart, start-up degraded state (Plan 5); the Stitch-designed admin UI (Plan 4); the Android app (Plan 3); Tailscale name resolution and the phone's address race (Plan 6).
+
+## Admin UI (Plan 4)
+
+`server/public/` holds the laptop web UI: plain HTML, CSS and ES modules, no build step. At start-up `static.js` reads `index.html` and everything under `assets/` (known extensions only) into a `Map` keyed by URL path; the admin handler answers `GET` requests by looking the path up in that map, so a URL can never become a file path. The page talks to the admin API only (same origin) and refreshes on the `changed` event. Details: [admin-ui.md](admin-ui.md).

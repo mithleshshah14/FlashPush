@@ -97,7 +97,7 @@ test('the admin API refuses foreign hosts and cross-site requests over the real 
   assert.equal(code(await env.admin('GET', '/admin/ping', { headers: { host: 'evil.example' } })), 'FORBIDDEN');
   assert.equal(code(await env.admin('POST', '/admin/history/clear', { headers: { origin: 'http://evil.example' }, json: {} })), 'FORBIDDEN');
   const page = await env.admin('GET', '/');
-  assert.match(page.text, /<title>FlashPush<\/title>/);
+  assert.match(page.text, /<title>[^<]*FlashPush<\/title>/);
 });
 
 test('two phones cannot see each other\'s items', async (t) => {

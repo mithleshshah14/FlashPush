@@ -9,7 +9,9 @@
 | [pairing.md](pairing.md) | exact pairing crypto, message flow, limits and test vectors | written (Plan 1A) |
 | [dev-safety.md](dev-safety.md) | antivirus-safe development rules, the test guard, how to react to an alert | written |
 | [architecture.md](architecture.md) | listeners, modules, state on disk, start-up and shutdown | written (Plan 1B-ii-b) |
+| [admin-ui.md](admin-ui.md) | laptop web UI: views, API use, theme, accessibility, security rules, screenshots | written (Plan 4) |
 | [security.md](security.md) | threats and protections, what is not protected, review checklist | written (Plan 1B-ii-b) |
+| [design/implemented/](design/implemented/) | screenshots of the built laptop UI (dark/light, desktop/mobile) | written (Plan 4) |
 | [protocol.md](protocol.md) | device API, admin API and UDP discovery reference | written (Plans 1B-ii-a/b) |
 | [setup.md](setup.md) | install, tray, start with Windows, firewall rule and its scope, Tailscale, antivirus notes, troubleshooting | written (Plan 5) |
 | [testing.md](testing.md) | automated suite, what tests never do, manual Windows checklist | written (Plan 5) |

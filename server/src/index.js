@@ -19,6 +19,7 @@ const { createDiscovery } = require('./discovery');
 const { createDeviceApi } = require('./deviceApi');
 const { createAdminApi } = require('./adminApi');
 const { Lifecycle, listenFailureReason, createTracker } = require('./lifecycle');
+const { loadPublicFiles } = require('./static');
 
 function listen(server, port, host) {
   return new Promise((resolve, reject) => {
@@ -76,11 +77,11 @@ async function createApp({ home, overrides = {}, log = console.log, readTailscal
   const addressProvider = createAddressProvider({ readName: readTailscaleName });
   const addresses = addressProvider.list;
   const deviceApi = createDeviceApi({ identity, devices, sessions, pairing, store, ops, limits, receiveDir: config.receiveDir, addresses, notify: changed });
-  const pageHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'admin.html'), 'utf8');
+  const files = loadPublicFiles(path.join(__dirname, '..', 'public'));
   const adminApi = createAdminApi({
     identity, devices, sessions, pairing, store, limits,
     receiveDir: config.receiveDir, outboxDir: config.paths.outbox,
-    addresses, getPorts: ports, bus, notify: changed, pageHtml, getStatus: () => lifecycle.status(),
+    addresses, getPorts: ports, bus, notify: changed, files, getStatus: () => lifecycle.status(),
   });
 
   const deviceServer = https.createServer({ key: tls.key, cert: tls.cert, minVersion: 'TLSv1.2' }, deviceApi.handler);

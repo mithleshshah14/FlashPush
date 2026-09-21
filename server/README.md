@@ -62,3 +62,9 @@ Windows blocks incoming connections until you allow them. Run `scripts\allow-fir
 ## Documentation
 
 [Setup](../docs/setup.md) · [Testing](../docs/testing.md) · [Architecture](../docs/architecture.md) · [Protocol](../docs/protocol.md) · [Pairing crypto](../docs/pairing.md) · [Security](../docs/security.md) · [Transfers](../docs/transfers.md) · [All docs](../docs/README.md)
+
+[Architecture](../docs/architecture.md) · [Protocol](../docs/protocol.md) · [Pairing crypto](../docs/pairing.md) · [Security](../docs/security.md) · [Transfers](../docs/transfers.md) · [All docs](../docs/README.md)
+
+## Admin page
+
+`http://127.0.0.1:8760` shows the Stitch-designed UI (Dashboard, Approvals, Devices; dark and light). Its source is `server/public/` and needs no build step. See [docs/admin-ui.md](../docs/admin-ui.md) for how it works, the security rules for changing it, and how to preview it with sample data (`node test/tools/demo-server.js`, loopback only).
