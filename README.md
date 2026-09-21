@@ -51,6 +51,10 @@ The Android app in `app/` is the v2 app (see [`app/README.md`](app/README.md)); 
 
 Everything lives in [`docs/`](docs/README.md): the design spec, the reasoning behind each decision, and (as they are written) the protocol, pairing, security, setup and testing guides. [`CHANGELOG.md`](CHANGELOG.md) records what changed on each working day.
 
+## Contributing and security
+
+Changes come in as pull requests from forks: see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately: [SECURITY.md](SECURITY.md). The repository is public, so it is scanned for secrets before every push: [docs/repo-security.md](docs/repo-security.md).
+
 ## Branching and workflow
 
 | Branch | Purpose |
