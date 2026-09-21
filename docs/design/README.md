@@ -29,7 +29,7 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 
 | Screen | Theme | Stitch id | PNG |
 |---|---|---|---|
-| Devices: laptops list (3 states: connected / paired / not paired) | dark | `a3baf43c392c4af69c08fbef4dff1c10` | `screens/android-devices-list.png` |
+| Devices: laptops list (connected / Tailscale route / not paired), **icon buttons (v3)** | dark | `a83b6859ea9b45a89a5e70045cdf0ece` | `screens/android-devices-list.png` |
 | Devices: laptops list | light | `0d5b5a2b06cc4139ba9bd84b4931a2cb` | `screens/android-devices-list-light.png` |
 | Devices: empty state ("Looking for your laptop...") | dark | `3241560b717e4fd99999761d013a1553` | `screens/android-devices-empty.png` |
 | Add laptop by address (bottom sheet) | dark | `06453225d7854d828481c32b77335b21` | `screens/android-add-by-address.png` |
@@ -39,7 +39,7 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 | Pairing: expired | dark | `ca1a29414b2743e6b12df7c939c3073e` | `screens/android-pairing-expired.png` |
 | Problem: not paired anymore (Re-pair / Forget) | dark | `518c615180084b249caf7e13176121b4` | `screens/android-not-paired-anymore.png` |
 | Problem: laptop identity changed | dark | `a5c9f90052ab41f9859e505354b10e80` | `screens/android-identity-changed.png` |
-| Laptop detail: Messages (connected) | dark | `b32a29cf1a9e4dc695edddfbe2b61fd9` | `screens/android-detail-messages.png` |
+| Laptop detail: Messages (connected), **icon buttons (v3)** | dark | `f22d86df4f0d4e32916d00290957f80b` | `screens/android-detail-messages.png` |
 | Laptop detail: Images (connected) | dark | `0c348cf5efc440a28e6891c701404a0d` | `screens/android-detail-images.png` |
 | Laptop detail: Images, empty | dark | `0ea25c9867dd4afa86f7f60e499a7399` | `screens/android-detail-images-empty.png` |
 | Laptop detail: Files (with a file mid-transfer) | dark | `cb5821b940e54a358e500564c798c620` | `screens/android-detail-files.png` |
@@ -62,13 +62,36 @@ Bottom tab bar on every phone screen: **Devices | Transfer | Settings**. Tapping
 | Devices (paired phones, Revoke) | dark | `e8153d85374f4d659e30de9ba57d3919` | `screens/laptop-devices.png` |
 | Devices | light | `26c01a1608fd4af29978d845a4493b58` | `screens/laptop-devices-light.png` |
 
-## Icon-button pass (header connection controls)
+## Icon-button pass (header connection controls): status
 
-The connection-controls spec in `.stitch/DESIGN.md` §6 is the target. Status of each phone screen that shows connection state:
+Target spec: [`.stitch/DESIGN.md`](../../.stitch/DESIGN.md) §6 (two rounded 44–48 dp icon buttons, link = connect/disconnect action replacing the text button, no status words, green = on / grey = off, "via Tailscale" only as a tooltip).
 
-| Screen | State |
+| Screen | Header / row controls |
 |---|---|
-| Devices list (dark, light), pairing waiting / approved, laptop detail (Messages, Images, Files and their empty states, not connected), New transfer text | see the "Header status" list at the bottom of this file |
+| Devices list, dark (`a83b6859…`) | **v3 done.** Row buttons for all three states; the Tailscale row shows Wi-Fi grey and link green; pairing state moved into the subtitle (`100.101.102.103 · Paired`) so no status text sits next to the icons |
+| Laptop detail: Messages (`f22d86df…`) | **v3 done** (both ON) |
+| Laptop detail: Images, Images empty, Files, Files empty | v2: two small icons plus a text `Disconnect` button. **Still to convert to v3 (both ON)** |
+| Laptop detail: not connected | v2: two small OFF icons plus a text `Connect` button. **Still to convert to v3 (both OFF, link = tap to connect).** The v3 generation timed out and was not confirmed in Stitch |
+| Laptop detail: Tailscale route | **Not created.** Wi-Fi OFF, link ON, no visible "via Tailscale" text. The generation timed out (the Devices list v3 already shows the Tailscale row pattern) |
+| Devices list, light (`0d5b5a2b…`) | v2 icons with status words `Paired` / `Not paired` beside them. **Still to convert to v3** |
+| Pairing waiting (Wi-Fi ON, link OFF), Pairing approved (both ON) | v2 small icons (no text button). **Still to convert to button containers** |
+| New transfer: Text | still shows the name chip with a mint dot. **Still to convert** (name + the two buttons) |
+| Devices empty, Add by address, pairing denied / expired, problem states, Settings, Transfer not connected | no connection state shown in the header. Add by address still lacks the dimmed tab bar behind its sheet |
+
+The laptop web UI is approved and untouched.
+
+Working prompt for one screen (single change, as a `generate_variants` of the screen, or the same text at the end of a full `generate_screen_from_text` prompt):
+
+```
+Keep everything exactly the same EXCEPT the top app bar controls. Remove the outlined "Disconnect" text
+button and any status words. On the right of the app bar show TWO icon BUTTONS side by side, each a
+rounded-square button container (12px radius, 44dp x 44dp touch target, subtle filled background, a soft
+ring hinting the pressed state): (1) a Wi-Fi status button with the Wi-Fi icon; (2) a link ACTION button
+with the link icon (two chain links) that disconnects when tapped and replaces the old Disconnect button.
+ON = solid mint #16F9CB glyph on a mint-tinted container rgba(22,249,203,0.12) with a hairline mint border.
+OFF = outlined grey #6B7FA3 glyph with a diagonal slash in a transparent container with a grey border.
+Labels: "Wi-Fi: on|off", "Linked to laptop: on|off. Tap to disconnect|connect". No text next to the buttons.
+```
 
 ## Superseded screens (still in the project)
 
@@ -76,6 +99,8 @@ Stitch has no delete tool, so earlier iterations remain in the project. Do not i
 
 | Id | What it was | Replaced by |
 |---|---|---|
+| `a3baf43c392c4af69c08fbef4dff1c10` | Devices list with small icons and text pairing status (v2) | `a83b6859…` |
+| `b32a29cf1a9e4dc695edddfbe2b61fd9` | laptop detail Messages with small icons plus a text Disconnect button (v2) | `f22d86df…` |
 | `0256a34dbb6145bd9f5916021b32c16f` | first Devices list (invented "MDNS", port and "Mesh" details) | `a3baf43c…` |
 | `1c2a89cd85044fb588899d9c6a8cdeae` | Devices list with details removed but "Connected" word kept | `a3baf43c…` |
 | `5bfc3bf76e4d4ae1a36dc734e7384ad9` | light Devices list with text status | `0d5b5a2b…` |

@@ -12,6 +12,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed
 - Design decisions taken from user review (recorded in `docs/decisions.md`): connection state is two icon buttons (Wi-Fi status + link action) with no status words, green = on / grey = off; tapping a laptop opens a detail screen with history split into Messages / Images / Files and a "New transfer" flow; the Transfer tab is a shortcut to the connected laptop's detail.
 
+### Partially done
+- **Icon-button connection controls (v3)** applied to the Devices list (dark) and laptop detail Messages; the remaining phone screens still show the previous small-icon header and are listed with the exact prompt in `docs/design/README.md`.
+
 ### Notes
 - Stitch limitations found and documented: `edit_screens` does not persist, `generate_variants` keeps only the first change and returns one variant per call, listing lags after generation. Superseded iterations remain in the Stitch project (no delete tool) and are listed in `docs/design/README.md`.
 
