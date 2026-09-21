@@ -1,6 +1,6 @@
 import { clear, h, icon } from '../dom.js';
-import { addressText, firewallCommand, firewallNote, formatSize, itemChip, itemIcon, safeUrl, sendTarget, statusInfo } from '../model.js';
-import { copyButton, guarded, routeChip } from '../widgets.js';
+import { addressText, firewallCommand, firewallNote, formatSize, itemChip, itemIcon, sendTarget, statusInfo } from '../model.js';
+import { copyButton, routeChip } from '../widgets.js';
 
 const signature = (value) => JSON.stringify(value);
 
@@ -26,24 +26,20 @@ export function createDashboard(ctx) {
   // ---- send ----
   const target = h('select', { class: 'field', attrs: { 'aria-label': 'Send to which phone?' } });
   target.hidden = true;
-  const text = h('textarea', { class: 'field', attrs: { placeholder: 'Type text or paste a link', 'aria-label': 'Text to send', rows: 3 } });
-  const sendError = h('p', { class: 'error-text', attrs: { role: 'alert' } });
-  const sendButton = h('button', { class: 'btn btn-primary', attrs: { type: 'button' } }, h('span', { text: 'Send text' }), icon('send', 16));
   const noPhone = h('p', { class: 'hint', text: 'Pair a phone first: it will show up under Approvals.' });
   const fileInput = h('input', { class: 'visually-hidden', attrs: { type: 'file', multiple: true, tabindex: '-1', 'aria-hidden': 'true' } });
   const dropzone = h('button', { class: 'dropzone', attrs: { type: 'button' } }, h('span', { class: 'icon' }, icon('upload', 28)), h('span', { text: 'Drop files here or click to choose' }));
   const uploads = h('div', { class: 'uploads', attrs: { 'aria-live': 'polite' } });
   const sendCard = h('section', { class: 'card', attrs: { 'aria-labelledby': 'h-send' } },
-    h('div', { class: 'card-head' }, h('h2', { text: 'Send to phone', attrs: { id: 'h-send' } })),
-    target, text,
-    h('div', { class: 'field-actions' }, noPhone, sendButton),
-    sendError, dropzone, fileInput, uploads);
+    h('div', { class: 'card-head' }, h('h2', { text: 'Send to phone', attrs: { id: 'h-send' } }), h('a', { class: 'btn-link', text: 'Open Messages', attrs: { href: '#/messages' } })),
+    h('p', { class: 'card-note', text: 'Drop files or images here. To write a message, open Messages.' }),
+    target, noPhone, dropzone, fileInput, uploads);
 
-  // ---- items ----
+  // ---- files and images (messages have their own view) ----
   const itemList = h('div', { class: 'list' });
   const clearButton = h('button', { class: 'btn-link', text: 'Clear history', attrs: { type: 'button' } });
   const itemsCard = h('section', { class: 'card', attrs: { 'aria-labelledby': 'h-items' } },
-    h('div', { class: 'card-head' }, h('h2', { text: 'Shared items', attrs: { id: 'h-items' } }), clearButton), itemList);
+    h('div', { class: 'card-head' }, h('h2', { text: 'Files and images', attrs: { id: 'h-items' } }), clearButton), itemList);
 
   // ---- firewall help ----
   const command = h('div', { class: 'code-row' }, h('code', { text: firewallCommand }), copyButton(ctx, firewallCommand));
@@ -58,21 +54,6 @@ export function createDashboard(ctx) {
   // ---- behaviour ----
   const run = (action) => action().catch((error) => ctx.announce(error.message));
   const targetId = () => (target.hidden ? sendTarget(state.devices).defaultId : target.value);
-
-  sendButton.addEventListener('click', () => {
-    const value = text.value;
-    if (!value.trim()) return;
-    guarded(sendButton, async () => {
-      await ctx.send('POST', '/admin/text', { deviceId: targetId(), text: value });
-      text.value = '';
-      await ctx.refresh();
-    }, (message) => {
-      sendError.textContent = message;
-    });
-  });
-  text.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) sendButton.click();
-  });
 
   function startUpload(file) {
     const name = h('span', { text: file.name });
@@ -113,7 +94,7 @@ export function createDashboard(ctx) {
   });
 
   clearButton.addEventListener('click', async () => {
-    const ok = await ctx.confirmDialog({ title: 'Clear history?', message: 'This removes every item from the list. Files already received stay in your Downloads folder.', confirmLabel: 'Clear history', danger: true });
+    const ok = await ctx.confirmDialog({ title: 'Clear history?', message: 'This removes every message, image and file from the lists. Files already received stay in your Downloads folder.', confirmLabel: 'Clear history', danger: true });
     if (ok) {
       run(async () => {
         await ctx.send('POST', '/admin/history/clear', {});
@@ -124,26 +105,16 @@ export function createDashboard(ctx) {
 
   function itemRow(item, devices) {
     const chip = itemChip(item, devices);
-    const url = item.kind === 'text' ? safeUrl(item.text) : null;
-    const kind = itemIcon(item);
-    let body;
-    if (item.kind === 'text') {
-      body = url
-        ? h('a', { class: 'text-link', text: url, attrs: { href: url, target: '_blank', rel: 'noopener noreferrer' } })
-        : h('span', { text: item.text });
-    } else {
-      body = h('span', {}, item.name, h('span', { class: 'row-meta', text: formatSize(item.size) }));
-    }
-    const lead = kind === 'image'
+    const body = h('span', {}, item.name, h('span', { class: 'row-meta', text: formatSize(item.size) }));
+    const lead = itemIcon(item) === 'image'
       ? h('img', { class: 'thumb', attrs: { src: `/admin/files/${encodeURIComponent(item.id)}?inline=1`, alt: '', width: 48, height: 48, loading: 'lazy' } })
-      : h('span', { class: 'icon' }, icon(kind === 'file' ? 'file' : kind, 20));
-    const actions = h('div', { class: 'row-actions' });
-    if (item.kind === 'text') actions.append(copyButton(ctx, item.text));
-    else actions.append(h('a', { class: 'btn btn-secondary btn-small', attrs: { href: `/admin/files/${encodeURIComponent(item.id)}`, download: item.name } }, icon('download', 16), 'Download'));
-    actions.append(h('button', { class: 'btn btn-danger btn-small', attrs: { type: 'button' }, on: { click: () => run(async () => {
-      await ctx.send('DELETE', `/admin/items/${encodeURIComponent(item.id)}`);
-      await ctx.refresh();
-    }) } }, icon('trash', 16), 'Delete'));
+      : h('span', { class: 'icon' }, icon('file', 20));
+    const actions = h('div', { class: 'row-actions' },
+      h('a', { class: 'btn btn-secondary btn-small', attrs: { href: `/admin/files/${encodeURIComponent(item.id)}`, download: item.name } }, icon('download', 16), 'Download'),
+      h('button', { class: 'btn btn-danger btn-small', attrs: { type: 'button' }, on: { click: () => run(async () => {
+        await ctx.send('DELETE', `/admin/items/${encodeURIComponent(item.id)}`);
+        await ctx.refresh();
+      }) } }, icon('trash', 16), 'Delete'));
     return h('div', { class: 'row' }, h('span', { class: `chip chip-${chip.direction}`, text: chip.label }), lead, h('div', { class: 'row-text' }, body), actions);
   }
 
@@ -183,15 +154,15 @@ export function createDashboard(ctx) {
     }
     target.hidden = !phones.needsChoice;
     noPhone.hidden = !phones.disabled;
-    sendButton.disabled = phones.disabled;
     dropzone.disabled = phones.disabled;
 
-    const itemKey = signature([next.items.map((i) => i.id), next.devices.map((d) => [d.deviceId, d.name])]);
+    const files = next.items.filter((item) => item.kind === 'file');
+    const itemKey = signature([files.map((i) => i.id), next.devices.map((d) => [d.deviceId, d.name])]);
     if (shown.items !== itemKey) {
       shown.items = itemKey;
       clear(itemList);
-      if (!next.items.length) itemList.append(h('p', { class: 'empty', text: 'Nothing yet. Send something from your phone or from here.' }));
-      for (const item of [...next.items].reverse()) itemList.append(itemRow(item, next.devices));
+      if (!files.length) itemList.append(h('p', { class: 'empty', text: 'No files or images yet. Send one from your phone or drop one here.' }));
+      for (const item of [...files].reverse()) itemList.append(itemRow(item, next.devices));
     }
     clearButton.hidden = next.items.length === 0;
   }

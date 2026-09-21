@@ -108,6 +108,11 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Added (laptop)
 - **Tray notification for what a phone sends** while the admin site is not open: one balloon per burst ("Pixel 7 sent a message / an image / a file / 3 items: …"), never showing content; clicking opens the chat (`#/messages`) for messages or the dashboard (`#/dashboard`) for files and images. The pairing balloon now opens `#/approvals`. New `itemNotifier.js` (pure, 10 tests), `adminApi.viewers()`, per-balloon click targets in the tray. Server suite: **324 tests**. Manual steps in `docs/testing.md`.
 
+### Added (laptop chat view)
+- **Messages** on the laptop web UI is now a separate, chat-style view (`#/messages`): one conversation per phone, bubbles (phone left, laptop right), day separators, grouped runs, safe clickable links, copy on hover, a "New messages" pill when you scrolled up, and a compose bar pinned at the bottom (Enter sends, Shift+Enter newline). An in-memory **unread badge** on the Messages nav item and in the page title.
+- The Dashboard feed is now **Files and images** only; its text box moved into Messages (an "Open Messages" link stays). Deep links `#/messages`, `#/dashboard`, `#/approvals` work when opened directly (for the tray).
+- Tests: `ui-chat-model.test.js`, `ui-messages.test.js` (fake DOM helper). Demo data has a two-day conversation; the screenshot tool includes Messages.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

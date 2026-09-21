@@ -4,6 +4,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // 24x24 line icons, stroke = currentColor. Each entry is a list of path definitions.
 const ICONS = {
   dashboard: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+  chat: ['M5 4h14a1 1 0 011 1v10a1 1 0 01-1 1h-8l-5 4v-4H5a1 1 0 01-1-1V5a1 1 0 011-1z', 'M8 9h8', 'M8 12h5'],
   shield: ['M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z', 'M8.5 12l2.5 2.5 4.5-5'],
   devices: ['M3 5h13v9H3z', 'M8 18h3', 'M17 9h4v11h-4z'],
   phone: ['M8 3h8a1 1 0 011 1v16a1 1 0 01-1 1H8a1 1 0 01-1-1V4a1 1 0 011-1z', 'M11 18h2'],

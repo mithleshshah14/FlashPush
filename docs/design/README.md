@@ -170,3 +170,14 @@ Per-screen content (all copy is exactly as designed; see the PNGs):
 - Some generations come back as a phone mockup on a 2560×2048 artboard tagged `DESKTOP` instead of a native 780×1830 mobile artboard. The content is the same; the PNGs are exported at the size the artboard has.
 - The generator adds a default bottom navigation bar and invented technical details unless told not to; the prompt rules above prevent this.
 - Long-running generations can time out; the screen usually still completes and shows up in `list_screens` later. Do not retry immediately.
+
+## Laptop chat view (Messages): built without a Stitch screen
+
+Requested after the laptop designs were approved: "the message tab in the laptop is not separate, it should look like I am having a chat". Stitch has no screen for it yet, so it was built from the existing design language (`.stitch/DESIGN.md` tokens) and the phone app's Messages tab:
+
+- Route `#/messages`, nav item between Dashboard and Approvals with an unread badge.
+- A card holding a scrolling thread and a compose bar pinned at the bottom. Phone bubbles sit on the left (surface colour, avatar with the phone's initial), laptop bubbles on the right (primary blue, dark text in the dark theme, white in the light theme), 18 px rounded with a small corner where the tail would be.
+- Day separators are small pills; times are mono, small, under each bubble; a "New messages" pill floats above the compose bar when you have scrolled up.
+- Dark and light themes follow the rest of the UI; below 900 px the chat uses the full width.
+
+To add it to Stitch, generate one screen per theme with the prompt: "Laptop web admin, Messages view, chat with a phone named Pixel 7: incoming bubbles left, outgoing bubbles right (primary blue), day separators, time under each bubble, compose bar pinned at the bottom with a send button; same sidebar as the Dashboard with Messages selected and a small unread badge." Screenshots of the built view can be produced with `node test/tools/screenshots.js` (see `docs/admin-ui.md`); none are committed yet.
