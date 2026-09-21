@@ -152,6 +152,9 @@ The automated tests cannot cover the Android platform or a real network. Run thi
 
 #### Reconnect and offline
 
+- [ ] Connected (link icon green), swipe the app away and reopen it: it reconnects by itself (both icons green). Tap the link icon (Disconnect), reopen the app: it stays disconnected.
+- [ ] Restart the laptop server while the phone app is open: the link icon goes grey and returns to green without touching anything.
+
 - [ ] Stop the server while connected: the icons go grey and the app keeps retrying (it reconnects on its own after the server restarts).
 - [ ] Press Disconnect, then stop and start the server: the app does **not** reconnect by itself.
 - [ ] Lock the phone for a minute and unlock: the list refreshes and the connection is restored.

@@ -113,6 +113,9 @@ Newest first. Every working day's changes are recorded here and in the affected 
 - The Dashboard feed is now **Files and images** only; its text box moved into Messages (an "Open Messages" link stays). Deep links `#/messages`, `#/dashboard`, `#/approvals` work when opened directly (for the tray).
 - Tests: `ui-chat-model.test.js`, `ui-messages.test.js` (fake DOM helper). Demo data has a two-day conversation; the screenshot tool includes Messages.
 
+### Fixed (found on the real phone)
+- **After pairing, only the Wi-Fi icon stayed green.** The "connect" intent was kept only in memory, so restarting the app (or reinstalling it, or restarting the laptop server while the app was closed) left the laptop as "paired, not connected". The app now remembers which laptop you connected and reconnects it on its own at start (auto-reconnect on); Disconnect, Forget or connecting another laptop clears it. 4 new tests (**179 app tests**). Rules in `docs/connection-state.md`.
+
 ### Planned
 - Spec revision 2 **approved**.
 - Implementation split into plans (`docs/superpowers/plans/2026-09-21-v2-plan-index.md`): 1A server security core, 1B server API and transfers, 2 Stitch designs, 3 Android app v2, 4 laptop web UI, 5 Windows shell, 6 Tailscale/reconnect/hardening. **Plan 1A is written in full** (8 test-first tasks with complete code, including known-answer crypto vectors computed from the spec's definitions).

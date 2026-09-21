@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flashpush/app_controller.dart';
 import 'package:flashpush/core/models.dart';
 import 'package:flashpush/native.dart';
+import 'package:flashpush/net/discovery.dart';
 import 'package:flashpush/net/link_state.dart';
 import 'package:flashpush/net/pairing.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,62 @@ void main() {
     s.discovered.add(const DiscoveredLaptop(laptopId: 'laptop-a', name: 'MITHLESH-PC', host: '192.168.1.6', port: 8765));
     await s.app.discovery.scanNow();
     expect(s.app.rows.firstWhere((r) => r.id == 'laptop-a').wifiUp, isTrue, reason: 'paired and seen on the Wi-Fi');
+  });
+
+  group('the connection you asked for survives an app restart', () {
+    /// A second run of the app over the same stored data, as after closing and reopening it.
+    Future<AppController> restart(Setup s) async {
+      final app = AppController(
+        store: s.store,
+        settings: s.settings,
+        cache: s.cache,
+        apiFor: (host, port, pin) => (host.startsWith('192.168.2.') ? s.netB : s.netA).apiFor(host, port, pin),
+        discovery: DiscoveryController(() async => [], wait: (d) async {}, retryDelays: const []),
+      );
+      await app.init();
+      addTearDown(app.dispose);
+      // The resumed connection runs on its own: wait until nothing is still connecting.
+      for (var i = 0; i < 100; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        if (!app.rows.any((row) => row.state == LinkState.connecting)) break;
+      }
+      return app;
+    }
+
+    test('a connected laptop is reconnected when the app starts again', () async {
+      final s = await setup();
+      await s.app.connect('laptop-a');
+      final again = await restart(s);
+      expect(again.connectionFor('laptop-a')!.state, LinkState.connected);
+      expect(again.connectionFor('laptop-b')!.state, LinkState.paired, reason: 'only the laptop you connected');
+    });
+
+    test('after Disconnect a restart leaves the laptop paired but not connected', () async {
+      final s = await setup();
+      await s.app.connect('laptop-a');
+      await s.app.disconnect('laptop-a');
+      final again = await restart(s);
+      expect(again.connectionFor('laptop-a')!.state, LinkState.paired);
+    });
+
+    test('with auto-reconnect off a restart does not connect on its own', () async {
+      final s = await setup();
+      await s.app.connect('laptop-a');
+      await s.settings.setAutoReconnect(false);
+      final again = await restart(s);
+      expect(again.connectionFor('laptop-a')!.state, LinkState.paired);
+    });
+
+    test('connecting another laptop moves the remembered one; forgetting clears it', () async {
+      final s = await setup();
+      await s.app.connect('laptop-a');
+      await s.app.connect('laptop-b');
+      expect(s.settings.activeLaptopId, 'laptop-b');
+      await s.app.forget('laptop-b');
+      expect(s.settings.activeLaptopId, isNull);
+      final again = await restart(s);
+      expect(again.connectionFor('laptop-a')!.state, LinkState.paired);
+    });
   });
 
   test('connected laptops are listed first', () async {

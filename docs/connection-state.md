@@ -79,3 +79,17 @@ The event stream is opened **before** the list is fetched (the laptop does not r
 ## Only one laptop at a time
 
 Connecting a laptop disconnects any other. Share-to-FlashPush sends to the connected laptop; with none connected it asks to connect first.
+
+## Resuming after an app or server restart
+
+The connect intent is persisted as `activeLaptopId` (non-secret settings, `data/app_settings.dart`):
+
+| Event | `activeLaptopId` |
+|---|---|
+| user connects a laptop (link icon, or right after pairing) | set to that laptop |
+| user connects another laptop | moves to the other laptop |
+| user taps Disconnect on it | cleared |
+| user forgets it | cleared |
+| app or laptop server restarts | unchanged |
+
+At start (`AppController.init`) the app reconnects the remembered laptop if **auto-reconnect** is on. With it off the laptop starts as *paired, not connected*. While the app is in the background the loop stays paused and resumes when it returns to the foreground; a laptop server restart is handled by the normal reconnect loop (the old session simply expires, `SESSION_EXPIRED` → reconnect with the device secret). Both header icons therefore return to green by themselves; the Wi-Fi icon needs the laptop to be reachable over Wi-Fi, the link icon needs the session.
