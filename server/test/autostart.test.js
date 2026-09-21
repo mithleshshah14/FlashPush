@@ -115,3 +115,12 @@ test('without an explicit folder the real %APPDATA% is required, and its absence
   assert.throws(() => uninstallAutostart({}), /APPDATA/);
   assert.throws(() => autostartStatus({}), /APPDATA/);
 });
+
+test("the launcher only starts node: no registry, scheduled tasks, file access, downloads or other programs", () => {
+  const text = buildLauncher(good);
+  for (const forbidden of [/RegWrite|RegDelete/i, /schtasks/i, /Scripting\.FileSystemObject/i, /Shell\.Application/i, /powershell/i, /cmd(\.exe)?\s/i, /XMLHTTP|WinHttp|URLDownloadToFile/i, /Environ|ExpandEnvironmentStrings/i, /Execute|Eval\(/i]) {
+    assert.doesNotMatch(text, forbidden);
+  }
+  assert.equal(text.match(/CreateObject\(/g).length, 1);
+  assert.equal(text.match(/\.Run /g).length, 1);
+});

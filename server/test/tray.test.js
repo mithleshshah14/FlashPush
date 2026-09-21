@@ -146,14 +146,20 @@ test('a child that reports an error does not crash and counts as exited', async 
 // These checks only read files.
 const read = (name) => fs.readFileSync(path.join(TRAY_DIR, name), 'utf8');
 
-test('tray.ps1 never executes or builds code from what it receives', () => {
-  const script = read('tray.ps1');
-  const code = script.replace(/^\s*#.*$/gm, ''); // ignore comments
-  for (const forbidden of [/Invoke-Expression/i, /\biex\b/i, /Start-Process/i, /Invoke-Command/i, /-EncodedCommand/i, /\[scriptblock\]::Create/i, /Invoke-WebRequest|Invoke-RestMethod|DownloadString/i, /New-Object\s+Net\.WebClient/i]) {
-    assert.doesNotMatch(code, forbidden);
-  }
-  assert.match(code, /ConvertFrom-Json/, 'messages are parsed as data');
-  assert.match(code, /\[string\]\$message\.type/, 'the message type is compared as text');
+// (Forbidden constructs such as runtime compilation, downloads and encoded commands are checked for
+// every .ps1 in the repository by scripts.test.js.)
+test('tray.ps1 treats messages as data: parsed as JSON, type compared as text', () => {
+  const code = read('tray.ps1').replace(/^\s*#.*$/gm, '');
+  assert.match(code, /ConvertFrom-Json/);
+  assert.match(code, /\[string\]\$message\.type/);
+});
+
+test('tray.ps1 reads stdin with a pending ReadLineAsync polled by the UI timer, and exits at end of input', () => {
+  const code = read('tray.ps1').replace(/^\s*#.*$/gm, '');
+  assert.match(code, /System\.IO\.StreamReader/);
+  assert.match(code, /\.ReadLineAsync\(\)/);
+  assert.match(code, /\.IsCompleted/);
+  assert.match(code, /\$null -eq \$line\)\s*\{\s*Stop-Tray/, 'a null line means stdin closed');
 });
 
 test('tray.ps1 only sends the documented messages and only removes its own icon', () => {
@@ -161,7 +167,6 @@ test('tray.ps1 only sends the documented messages and only removes its own icon'
   const sent = [...code.matchAll(/type\s*=\s*'([a-z-]+)'/g)].map((m) => m[1]).sort();
   assert.deepEqual([...new Set(sent)], ['click', 'notification-click', 'ready']);
   assert.match(code, /\$tray\.Visible = \$false/);
-  assert.match(code, /\[FlashPushStdin\]::Closed/, 'exits when Node goes away');
 });
 
 test('the icon generator and glyph source exist next to the icons', () => {

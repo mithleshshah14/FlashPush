@@ -1,7 +1,8 @@
 # FlashPush tray icon. Static script: it is started by server/src/tray.js with fixed arguments and
 # talks to Node over newline-delimited JSON (stdin: menu / notify / exit, stdout: ready / click /
 # notification-click). Every message field is display text or a fixed id; nothing received is ever
-# executed or turned into a command. It exits when told to, or when stdin closes (Node has gone).
+# executed or turned into a command. It compiles no code, downloads nothing and changes no settings.
+# It exits when told to, or when stdin closes (Node has gone).
 param(
     [Parameter(Mandatory = $true)][string]$IconDir
 )
@@ -11,39 +12,12 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-# Read stdin on a background thread; the UI timer below drains the queue.
-Add-Type -TypeDefinition @'
-using System;
-using System.Collections.Concurrent;
-using System.Threading;
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 
-public static class FlashPushStdin
-{
-    public static readonly ConcurrentQueue<string> Lines = new ConcurrentQueue<string>();
-    public static volatile bool Closed;
-
-    public static void Start()
-    {
-        Thread reader = new Thread(delegate ()
-        {
-            try
-            {
-                string line;
-                while ((line = Console.In.ReadLine()) != null) { Lines.Enqueue(line); }
-            }
-            catch (Exception) { }
-            Closed = true;
-        });
-        reader.IsBackground = true;
-        reader.Start();
-    }
-}
-'@
-
-try {
-    [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
-    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-} catch { }
+# One read of stdin is always pending; the UI timer below checks whether it has completed.
+$reader = New-Object System.IO.StreamReader ([Console]::OpenStandardInput()), (New-Object System.Text.UTF8Encoding($false))
+$script:pending = $reader.ReadLineAsync()
+$script:stopping = $false
 
 function Send-Message([hashtable]$Message) {
     [Console]::Out.WriteLine(($Message | ConvertTo-Json -Compress))
@@ -84,6 +58,8 @@ function Set-Menu($Message) {
 }
 
 function Stop-Tray {
+    if ($script:stopping) { return }
+    $script:stopping = $true
     $timer.Stop()
     $tray.Visible = $false
     $tray.Dispose()
@@ -104,12 +80,15 @@ function Receive-Line([string]$Line) {
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 100
 $timer.add_Tick({
-    $line = $null
-    while ([FlashPushStdin]::Lines.TryDequeue([ref]$line)) { Receive-Line $line }
-    if ([FlashPushStdin]::Closed -and [FlashPushStdin]::Lines.IsEmpty) { Stop-Tray }
+    while (-not $script:stopping -and $script:pending.IsCompleted) {
+        if ($script:pending.IsFaulted -or $script:pending.IsCanceled) { Stop-Tray; return }
+        $line = $script:pending.Result
+        if ($null -eq $line) { Stop-Tray; return }   # end of input: Node has gone
+        $script:pending = $reader.ReadLineAsync()
+        Receive-Line $line
+    }
 })
 
-[FlashPushStdin]::Start()
 $timer.Start()
 Send-Message @{ type = 'ready' }
 [System.Windows.Forms.Application]::Run()
