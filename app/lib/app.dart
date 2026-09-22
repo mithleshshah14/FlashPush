@@ -56,9 +56,17 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   static const _devices = 0;
+  static const _transfer = 1;
   int _tab = _devices;
   StreamSubscription<SharePayload>? _shareSubscription;
   StreamSubscription<(LaptopConnection, Item)>? _incomingSubscription;
+
+  /// A laptop detail page pushed from the Devices list is on top of everything else right now.
+  String? _openLaptopId;
+
+  /// True while the given laptop's Messages/Images/Files are already on screen (its own tab badges
+  /// handle new items instead), whether pushed from Devices or shown as the Transfer tab's shortcut.
+  bool _isViewing(String laptopId) => _openLaptopId == laptopId || (_tab == _transfer && widget.controller.active?.laptop.id == laptopId);
 
   @override
   void initState() {
@@ -111,7 +119,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   void _onIncoming((LaptopConnection, Item) event) {
     final (connection, item) = event;
-    if (!mounted) return;
+    if (!mounted || _isViewing(connection.laptop.id)) return;
     final what = item.isImage ? 'an image' : item.isFile ? 'a file' : 'a message';
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -136,9 +144,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   void _openDetail(LaptopConnection connection) {
+    setState(() => _openLaptopId = connection.laptop.id);
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => LaptopDetailPage(controller: widget.controller, laptopId: connection.laptop.id, actions: widget.actions, onRePair: _pair),
-    ));
+    )).then((_) {
+      if (mounted) setState(() => _openLaptopId = null);
+    });
   }
 
   Future<void> _pair(String host, int port) async {

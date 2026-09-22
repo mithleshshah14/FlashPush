@@ -154,6 +154,30 @@ void main() {
     expect(find.byKey(const Key('text-field')), findsOneWidget);
   });
 
+  testWidgets('a tab you are not on gets a count badge; opening it clears the count, the active tab never gets one', (tester) async {
+    final d = await openDetail(tester);
+    // Already on Messages (index 0): a text item does not badge it.
+    await tester.runAsync(() async {
+      d.s.netA.emit('item-added', d.s.netA.textItem('t1').toJson());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(find.text('1'), findsNothing);
+  });
+
+  testWidgets('an image for a tab you are not on gets a badge; opening that tab clears it', (tester) async {
+    final d = await openDetail(tester);
+    await tester.runAsync(() async {
+      d.s.netA.emit('item-added', Item(id: 'img1', kind: 'file', from: 'laptop', time: DateTime(2026), name: 'a.jpg', size: 10, mime: 'image/jpeg').toJson());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(find.text('1'), findsOneWidget, reason: 'the Images tab is not open');
+
+    await openTab(tester, 'Images');
+    expect(find.text('1'), findsNothing, reason: 'opening the tab clears its count');
+  });
+
   testWidgets('Messages: the composer is always there, and sending reaches the laptop', (tester) async {
     final d = await openDetail(tester);
     await tester.enterText(find.byKey(const Key('text-field')), 'hello from the phone');

@@ -89,6 +89,43 @@ void main() {
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode, ThemeMode.dark);
   });
 
+  testWidgets('an incoming item banners when you are elsewhere, but not once you are looking at that laptop', (tester) async {
+    final shell = await openShell(tester, connect: true);
+    await tester.runAsync(() async {
+      shell.s.netA.emit('item-added', shell.s.netA.textItem('m1').toJson());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(find.text('MITHLESH-PC sent a message'), findsOneWidget);
+
+    await tester.tap(find.text('MITHLESH-PC')); // open its detail from the Devices list, same laptop the banner's own Open action would reach
+    await tester.pumpAndSettle();
+    // Dismiss the first banner directly rather than waiting out its real auto-dismiss timer (unreliable
+    // under the test binding's fake clock) - the point of this test is the second event, not the timer.
+    ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first)).hideCurrentSnackBar();
+    await tester.pumpAndSettle();
+    expect(find.text('MITHLESH-PC sent a message'), findsNothing);
+
+    await tester.runAsync(() async {
+      shell.s.netA.emit('item-added', shell.s.netA.textItem('m2').toJson());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(find.text('MITHLESH-PC sent a message'), findsNothing, reason: 'already viewing this laptop\'s Messages tab');
+  });
+
+  testWidgets('no banner while the Transfer tab is already showing the connected laptop', (tester) async {
+    final shell = await openShell(tester, connect: true);
+    await tester.tap(find.text('Transfer'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      shell.s.netA.emit('item-added', shell.s.netA.textItem('m1').toJson());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(find.text('MITHLESH-PC sent a message'), findsNothing);
+  });
+
   testWidgets('a share that arrives without a connection asks to connect and shows Devices', (tester) async {
     final shell = await openShell(tester);
     await tester.tap(find.text('Settings'));

@@ -21,6 +21,7 @@ Newest first. Every working day's changes are recorded here and in the affected 
 
 ### Fixed
 - **Three duplicate "Android phone" entries on the laptop's Devices list** — not a code bug: repeatedly running `flutter install` during this session's testing uninstalled the app first each time, wiping its stored device id/credentials, so it re-paired as a "new" phone every time. Revoked the two stale entries; the current phone was untouched. Follow-up installs in this session now use `adb install -r` to update in place instead.
+- **The incoming-item banner covered the compose box, and still fired while already looking at that exact conversation.** Redesigned: `LaptopDetailPage` now tracks unread counts per tab (Messages/Images/Files) via an explicit `TabController` (replacing `DefaultTabController`, needed so the page's own state can react to tab changes) and shows a small `Badge.count` on a tab you're not currently on, clearing it when you open that tab; the active tab never gets one, since its content is already visible. `HomeShell` now tracks whether that laptop's detail page is already on screen (pushed from Devices, or showing as the Transfer tab's shortcut) and skips the banner entirely in that case — so the banner only ever appears when you're genuinely not looking, and never overlaps a composer.
 
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 
