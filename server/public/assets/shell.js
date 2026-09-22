@@ -36,10 +36,10 @@ export function createShell(doc = document) {
       refreshTitle();
     },
 
-    /** The number of unread messages from phones (shown on the Messages nav item and in the tab title). */
+    /** The number of unread messages from phones (shown on the Dashboard nav item and in the tab title). */
     setUnread(count) {
       state.unread = count;
-      const badge = $('messages-badge');
+      const badge = $('unread-badge');
       badge.hidden = count === 0;
       badge.textContent = String(count);
       badge.setAttribute('aria-label', `${count} unread`);

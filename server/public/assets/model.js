@@ -1,7 +1,7 @@
 // Pure helpers for the admin UI: no DOM, no network, so they can be unit-tested in Node.
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const VIEW_TITLES = { dashboard: 'Dashboard', messages: 'Messages', approvals: 'Approvals', devices: 'Devices' };
+const VIEW_TITLES = { dashboard: 'Dashboard', approvals: 'Approvals', devices: 'Devices' };
 const STATUS = {
   running: { label: 'Running', tone: 'ok' },
   starting: { label: 'Starting', tone: 'warn' },

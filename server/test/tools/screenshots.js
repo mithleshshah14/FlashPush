@@ -17,11 +17,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SHOTS = [
   ['dashboard', 'desktop', 1440, 900],
-  ['messages', 'desktop', 1440, 900],
   ['approvals', 'desktop', 1440, 900],
   ['devices', 'desktop', 1440, 900],
   ['dashboard', 'mobile', 390, 844],
-  ['messages', 'mobile', 390, 844],
   ['approvals', 'mobile', 390, 844],
   ['devices', 'mobile', 390, 844],
 ];

@@ -39,8 +39,8 @@ export function createDashboard(ctx) {
   const dropzone = h('button', { class: 'dropzone', attrs: { type: 'button' } }, h('span', { class: 'icon' }, icon('upload', 28)), h('span', { text: 'Drop files here or click to choose' }));
   const uploads = h('div', { class: 'uploads', attrs: { 'aria-live': 'polite' } });
   const sendCard = h('section', { class: 'card', attrs: { 'aria-labelledby': 'h-send' } },
-    h('div', { class: 'card-head' }, h('h2', { text: 'Send to phone', attrs: { id: 'h-send' } }), h('a', { class: 'btn-link', text: 'Open Messages', attrs: { href: '#/messages' } })),
-    h('p', { class: 'card-note', text: 'Drop files or images here. To write a message, open Messages.' }),
+    h('div', { class: 'card-head' }, h('h2', { text: 'Send to phone', attrs: { id: 'h-send' } })),
+    h('p', { class: 'card-note', text: 'Drop files or images here. To write a message, open a phone below.' }),
     target, noPhone, dropzone, fileInput, uploads);
 
   // ---- devices: click one to see its Messages / Images / Files ----

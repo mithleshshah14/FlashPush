@@ -6,12 +6,13 @@ The page you use on the laptop to chat with a phone, send files, approve phones 
 
 | View | Route | What it shows |
 |---|---|---|
-| **Dashboard** | `#/dashboard` | status pill (and the reason when the server reports `degraded`), the addresses your phone can reach with route chips and Copy, listening port; **Send to phone** (target selector when several phones are paired, file drop zone with per-file progress, an *Open Messages* link); **Devices** — one row per paired phone (name, connected status); clicking a phone swaps the card in place to a **Messages / Images / Files** tab view for that phone, with the connected status in the header, its own compose bar on Messages (Enter to send) and an "Add images" / "Add files" button on those tabs (uploads target that phone; progress shows in the Send to phone card above) — a back arrow returns to the device list; "Clear history" (all phones, with confirmation) shows only over the device list; collapsible **Can't connect from your phone?** with the firewall command and the exact ports and ranges it opens |
-| **Messages** | `#/messages` | a **chat** with one phone at a time (see below) |
+| **Dashboard** | `#/dashboard` | status pill (and the reason when the server reports `degraded`), the addresses your phone can reach with route chips and Copy, listening port; **Send to phone** (target selector when several phones are paired, file drop zone with per-file progress); **Devices** — one row per paired phone (name, connected status); clicking a phone swaps the card in place to a **Messages / Images / Files** tab view for that phone (see below), with the connected status in the header, its own compose bar on Messages (Enter to send) and an "Add images" / "Add files" button on those tabs (uploads target that phone; progress shows in the Send to phone card above) — a back arrow returns to the device list; "Clear history" (all phones, with confirmation) shows only over the device list; collapsible **Can't connect from your phone?** with the firewall command and the exact ports and ranges it opens |
 | **Approvals** | `#/approvals` | one card per pending request: phone name, IP, route chip, `Re-pair of <name>` badge, the big 6-digit code, a live expiry countdown, **Approve** / **Deny** |
 | **Devices** | `#/devices` | paired phones: last seen, route, connected status (filled dot = connected, ring = not), **Revoke** with confirmation |
 
-Navigation is hash based, so back/forward and bookmarks work, and every view can be opened directly: the tray opens `#/messages` for a new message, `#/dashboard` for a new file or image and `#/approvals` for a pairing request. The sidebar badges (Approvals, Messages) and the page title show what is waiting: pending requests plus unread messages, for example `(3) Messages · FlashPush`.
+There is no separate Messages page or nav item any more — a full-page chat (`createMessages` in `views/messages.js`) still exists in the codebase and is fully tested, just unrouted, in case it's wanted back; `#/messages` now falls back to the Dashboard, same as any unknown route.
+
+Navigation is hash based, so back/forward and bookmarks work, and every view can be opened directly: the tray opens `#/dashboard` for a new message, file or image, and `#/approvals` for a pairing request. The sidebar badge on Dashboard and the page title show what is waiting: pending requests plus unread messages, for example `(3) Dashboard · FlashPush`.
 
 ## How it talks to the server
 
@@ -23,7 +24,7 @@ All requests go to the same origin (`connect-src 'self'`).
 | Live updates | `EventSource('/admin/events')`; a `changed` event triggers a refetch of the state; there is no replay, every (re)connect refetches |
 | Approve / deny | `POST /admin/pair/:id/approve` and `/deny` |
 | Revoke | `DELETE /admin/devices/:id` |
-| Send a message (Messages view) | `POST /admin/text` with the selected phone's `deviceId` |
+| Send a message (Messages tab) | `POST /admin/text` with the open phone's `deviceId` |
 | Send a file | `POST /admin/file` through `XMLHttpRequest` (for upload progress) with `X-Filename` (URL-encoded) and `X-Device-Id` |
 | Files | `GET /admin/files/:id` (download) and `?inline=1` for image thumbnails (never SVG) |
 | Delete / clear | `DELETE /admin/items/:id`, `POST /admin/history/clear` |
@@ -32,18 +33,16 @@ Every non-GET request carries `X-FlashPush-Admin: 1` (see [protocol.md](protocol
 
 **Offline behaviour:** if the event stream or a refetch fails, a banner reads "Can't reach FlashPush on this laptop. Trying again..." and the browser reconnects by itself (or the page reopens the stream after a few seconds if the browser gave up). When the server is back the banner disappears and the state refreshes.
 
-## Messages (chat)
+## Messages (the Dashboard's per-device tab)
 
-Text messages have their own view and look like a conversation. Files and images stay on the Dashboard.
+Opening a phone's **Messages** tab shows a conversation with that phone alone (no picker needed — the phone is already chosen by which device you opened).
 
-- **One conversation per phone.** With one paired phone the conversation opens directly; with several, a picker at the top chooses the phone (messages you send go to the phone whose conversation is open).
-- **Bubbles:** messages from the phone on the left with its initial and name (shown once per run of consecutive messages), messages from the laptop on the right; a time under every bubble; day separators (Today, Yesterday, or the date).
+- **Bubbles:** messages from the phone on the left with its initial and name (shown once per run of consecutive messages), messages from the laptop on the right; a time under every bubble; day separators (Today, Yesterday, or the date). Shared rendering (`messageRow`/`daySeparator` in `views/messages.js`) so this looks identical to the old full-page chat.
 - **Links:** `http(s)` URLs inside a message become links that open in a new tab with `rel="noopener noreferrer"`; anything else (`javascript:`, `data:`, plain words) stays text. A **copy** button appears on hover or keyboard focus (always visible on touch screens).
-- **Scrolling:** the newest message is at the bottom and the thread follows it while you are at the bottom; if you scrolled up to read, a **New messages** pill appears instead of jumping.
-- **Compose bar** pinned at the bottom: **Enter sends, Shift+Enter is a new line**, the box grows up to six lines, Send is disabled while the box is empty, "Sending..." shows while a message is on its way, a failure appears inline and keeps your text, and the cursor stays in the box.
-- **Empty states:** "No messages yet. Say hello!" and, with no phone, "Pair a phone first".
-- **Unread badge:** the Messages item in the sidebar and the page title count phone messages that arrived while another view was open. The "read up to" marker lives **in memory only**: history that exists when the page loads counts as read, opening Messages reads everything, and reloading the page starts fresh. New incoming messages are announced through the live region.
-- Live updates use the same `changed` event as everything else; new bubbles are appended without redrawing the thread (so screen readers announce only the new message), and the thread is rebuilt only when something was removed or the phone changed.
+- **Compose bar** below the thread: **Enter sends, Shift+Enter is a new line**, the box grows up to six lines, Send is disabled while the box is empty, a failure appears inline and keeps your text.
+- **Empty state:** "No messages yet. Say hello!"
+- **Unread badge:** the Dashboard nav item and the page title count phone messages that arrived while the Dashboard wasn't open. The "read up to" marker lives **in memory only**: history that exists when the page loads counts as read, opening the Dashboard reads everything, and reloading the page starts fresh.
+- Live updates use the same `changed` event as everything else, but this tab always does a full rebuild on change (no incremental-append, no scroll-stick or "New messages" pill — the old full-page chat had those; they weren't carried over since the tab has its own scroll container, not the whole page).
 
 ## Theme
 

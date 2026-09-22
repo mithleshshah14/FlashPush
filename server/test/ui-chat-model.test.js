@@ -13,20 +13,19 @@ const at = (day, hour, minute) => new Date(2026, 8, day, hour, minute).getTime()
 const NOW = at(22, 15, 30);
 const text = (id, from, when, body, deviceId = A) => ({ id, kind: 'text', from, time: when, text: body, deviceId });
 
-test('#/messages is a route, unknown routes still fall back to the dashboard', async () => {
+test('#/messages is gone (messages live on the Dashboard now); unknown routes fall back to the dashboard too', async () => {
   const { parseRoute } = await load();
-  assert.equal(parseRoute('#/messages'), 'messages');
-  assert.equal(parseRoute('#/Messages?x=1'), 'messages');
+  assert.equal(parseRoute('#/messages'), 'dashboard');
   assert.equal(parseRoute('#/approvals'), 'approvals');
   assert.equal(parseRoute('#/nope'), 'dashboard');
 });
 
 test('the tab title counts pairing requests and unread messages together', async () => {
   const { documentTitle } = await load();
-  assert.equal(documentTitle('messages', 0), 'Messages · FlashPush');
+  assert.equal(documentTitle('dashboard', 0), 'Dashboard · FlashPush');
   assert.equal(documentTitle('dashboard', 2), '(2) Dashboard · FlashPush');
   assert.equal(documentTitle('devices', 1, 3), '(4) Devices · FlashPush');
-  assert.equal(documentTitle('messages', 0, 5), '(5) Messages · FlashPush');
+  assert.equal(documentTitle('dashboard', 0, 5), '(5) Dashboard · FlashPush');
 });
 
 test('dayLabel says Today, Yesterday, or the date', async () => {
