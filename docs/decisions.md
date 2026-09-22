@@ -309,3 +309,17 @@ Applied to the plan and spec before any code was written (about 290 lines fewer)
 | "only" vs "or later" | `GPL-3.0-only`; changing to `GPL-3.0-or-later` later is possible while the owner holds the copyright | keeps exactly the version the owner chose |
 | Dependencies | Flutter/Dart packages (BSD/MIT/Apache) and `selfsigned` (MIT) are compatible with GPL v3 and keep their own licenses | no conflict |
 | 2FA | enabled on the owner account (confirmed by the owner) | account security for a public repository |
+
+## 2026-09-23 — Dashboard device tabs, messaging parity, notifications (branch `feature/dashboard-device-tabs`)
+
+| Decision | Choice | Why |
+|---|---|---|
+| Dashboard's "Files and images" card | replaced with a **Devices** list; clicking a phone swaps the card in place to **Messages / Images / Files** tabs for that phone, no new route | requested; mirrors the phone's own laptop-detail tabs instead of a flat combined list |
+| Messages tab (laptop) | a real conversation with its own compose bar, not read-only with a link to a separate page | "it told you it should be like messaging app" |
+| Images/Files tabs (laptop) | each got its own "Add images" / "Add files" upload button, targeting that phone directly | parity with the app's per-tab send action; previously only the top-of-page Send card could upload |
+| Messages page/nav item | removed entirely; `#/messages` falls back to the Dashboard like any unknown route | redundant once the Dashboard covers messaging per-device; the old full-page chat component stays in the tree, just unrouted |
+| App composer | the "New message" floating button + modal sheet replaced with an inline compose bar under the thread | "shouldn't there be a composer in the app as well" |
+| App default phone name | detects the real device model (`Build.MANUFACTURER`/`MODEL` via the existing native channel) instead of the generic "Android phone", the first time no name has been saved | requested; no new Flutter dependency needed |
+| Notifications for incoming items | an in-app banner while foregrounded but elsewhere, not true background/closed-app push | the connection is deliberately foreground-only for battery reasons (see connection-state.md); background push would need a foreground service or a push relay, out of scope for this ask |
+| Banner vs. per-tab badges | the banner only fires when you are not viewing that laptop's detail page at all (pushed from Devices, or as the Transfer tab's shortcut); a tab you're on a *different* tab of the same laptop gets a small count badge instead, cleared on opening it | the banner was showing even while already on the exact tab, and its SnackBar covered the compose box |
+| Three duplicate "Android phone" devices | not a code bug: `flutter install` uninstalls first, wiping the stored device id, so each reinstall during testing re-paired as a "new" phone; revoked the two stale ones | root-caused, not patched around; future installs in a session use `adb install -r` to update in place |

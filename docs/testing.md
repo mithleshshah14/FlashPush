@@ -79,7 +79,7 @@ Start clean: `cd server`, then `node src\cli.js --status` should say `Start with
 
 ### Notification for what the phone sends (manual)
 
-- [ ] With FlashPush running and **no admin page open** (close the tab), send a text from the phone: within a few seconds one balloon "<phone> sent a message" appears; clicking it opens the site at Messages.
+- [ ] With FlashPush running and **no admin page open** (close the tab), send a text from the phone: within a few seconds one balloon "<phone> sent a message" appears; clicking it opens the site at the Dashboard (the balloon's "messages" target now lands there too — there is no separate Messages page any more).
 - [ ] Send an image, then a file: balloon "sent an image" / "sent a file"; clicking opens the Dashboard.
 - [ ] Send three items quickly: **one** balloon "sent 3 items: …".
 - [ ] Open the site and send again: **no** balloon.
@@ -142,11 +142,12 @@ The automated tests cannot cover the Android platform or a real network. Run thi
 
 #### Transfers
 
-- [ ] Text: on the Messages tab tap *New message*, type and send; it appears on the laptop. Send from the laptop; it appears on the phone live.
+- [ ] Text: on the Messages tab, type in the compose bar under the thread and send (no "New message" button any more, it's always there); it appears on the laptop. Send from the laptop; it appears on the phone live.
 - [ ] Image: on the Images tab tap *Send image* (the gallery opens at once); pick two photos; progress shows; both appear on the laptop (in `Downloads\FlashPush`).
 - [ ] Document: send a PDF; then send a file of a few hundred MB and watch progress.
-- [ ] Laptop to phone: send an image and a PDF from the admin page; they show under Images and Files; Save puts them in **Downloads/FlashPush** on the phone.
+- [ ] Laptop to phone: from a device's Messages tab, send a message from the compose bar; from Images/Files, use the "Add images"/"Add files" button (or the top-of-page Send card); they show under the right tab; Save puts them in **Downloads/FlashPush** on the phone.
 - [ ] Messages, Images and Files each show only their own kind; empty states look right.
+- [ ] While on a different tab of the same laptop, an incoming item shows a small count badge on the tab it belongs to instead of a banner; opening that tab clears it. On another screen entirely (Devices, Settings), a banner shows instead, with an Open action.
 - [ ] Turn Wi-Fi off mid-upload: the failure is shown with a message and can be dismissed; retrying does not create a duplicate on the laptop.
 - [ ] Share from another app (Gallery: an image; Chrome: a link): choose FlashPush; it arrives on the laptop. With no connection it asks to connect first.
 

@@ -6,7 +6,7 @@ Flutter app that sends text, links and files between your phone and your laptop 
 
 - **Devices tab:** laptops seen on the network and saved ones. Each shows two icon buttons instead of status words: **Wi-Fi** (green when reaching the laptop over local Wi-Fi) and **link** (green when connected; tapping it connects or disconnects). "Can't find your laptop? Add by address" takes an IP or a Tailscale name.
 - **Pairing:** the phone shows a 6-digit code; approve on the laptop only if it shows the same one. After that, connecting needs no approval.
-- **Laptop screen** (tap a laptop): **Messages**, **Images** and **Files** kept separate, all readable offline from a local cache, and a **center button that sends for the tab you are on**: *New message* opens the text box, *Send image* the gallery, *Send file* the file explorer.
+- **Laptop screen** (tap a laptop): **Messages**, **Images** and **Files** kept separate, all readable offline from a local cache; Messages has its own compose bar under the thread, Images/Files send through a **center button** (*Send image* opens the gallery, *Send file* the file explorer). A tab you're not on shows a small count badge instead of a banner when something new arrives on it; on another screen entirely, a banner shows with an Open action.
 - **Transfer tab:** a shortcut to the connected laptop.
 - **Settings:** phone name, paired laptops (Re-pair, Forget), theme, automatic reconnect, rescan, about.
 - **Share to FlashPush** from any Android app; files received are saved to **Downloads/FlashPush**.

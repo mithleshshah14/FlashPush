@@ -35,8 +35,8 @@ Or copy `app-debug.apk` to the phone and open it.
 
 ## 4. Send things
 
-- Phone → laptop: open the laptop and use the center button: on **Messages** it opens the text box, on **Images** the gallery, on **Files** the file explorer. Files land in `Downloads\FlashPush`.
-- Laptop → phone: on the Dashboard use **Send to phone** (text or drag a file in). It appears in the phone's Messages / Images / Files tabs.
+- Phone → laptop: open the laptop; on **Messages**, type in the compose bar under the thread; on **Images**/**Files**, the center button opens the gallery or the file explorer. Files land in `Downloads\FlashPush`.
+- Laptop → phone: on the Dashboard, click the phone under **Devices** and use its Messages/Images/Files tabs (or the top-of-page **Send to phone** for a quick file drop). It appears in the phone's Messages / Images / Files tabs.
 - Share to FlashPush from any Android app's Share menu.
 
 ## 5. Try the safety features
