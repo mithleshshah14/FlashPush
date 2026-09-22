@@ -7,6 +7,7 @@ import '../net/transfer_queue.dart';
 import 'connection_controls.dart';
 import 'file_list.dart';
 import 'image_grid.dart';
+import 'message_composer.dart';
 import 'message_list.dart';
 import 'platform_actions.dart';
 import 'problem_view.dart';
@@ -105,7 +106,12 @@ class _LaptopDetailPageState extends State<LaptopDetailPage> {
                       for (final entry in _queue.entries) _UploadRow(entry: entry, onDismiss: () => _queue.dismiss(entry)),
                       Expanded(
                         child: TabBarView(children: [
-                          MessageList(items: items.where((i) => i.isText).toList(), onOpenLink: _openLink),
+                          Column(
+                            children: [
+                              Expanded(child: MessageList(items: items.where((i) => i.isText).toList(), onOpenLink: _openLink)),
+                              if (connection.connected) MessageComposer(connection: connection),
+                            ],
+                          ),
                           ImageGrid(connection: connection, items: items.where((i) => i.isImage).toList(), saver: widget.actions.saveToDownloads),
                           FileList(connection: connection, items: items.where((i) => i.isFile).toList(), saver: widget.actions.saveToDownloads),
                         ]),
@@ -145,6 +151,7 @@ class _SendButton extends StatelessWidget {
       listenable: tabs,
       builder: (context, _) {
         final kind = SendKind.forTab(tabs.index);
+        if (kind == SendKind.message) return const SizedBox.shrink(); // the Messages tab sends through its own composer
         return FloatingActionButton.extended(
           key: Key(kind.key),
           onPressed: () => startSend(context, kind, connection: connection, queue: queue, actions: actions),

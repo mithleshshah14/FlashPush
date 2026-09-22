@@ -102,7 +102,7 @@ void main() {
     expect(s.app.connectionFor('laptop-a')!.state, LinkState.paired);
     expect(find.text('Showing saved history'), findsOneWidget);
     expect(find.text('Booked the room for 3 pm'), findsOneWidget);
-    expect(find.byKey(const Key('send-message')), findsNothing);
+    expect(find.byKey(const Key('text-field')), findsNothing, reason: 'no composer while offline');
     expect(find.byKey(const Key('connect-to-send')), findsOneWidget);
 
     await tester.runAsync(() async {
@@ -111,7 +111,7 @@ void main() {
     });
     await tester.pump();
     expect(d.s.app.connectionFor('laptop-a')!.connected, isTrue);
-    expect(find.byKey(const Key('send-message')), findsOneWidget);
+    expect(find.byKey(const Key('text-field')), findsOneWidget);
     expect(find.text('Showing saved history'), findsNothing);
   });
 
@@ -140,9 +140,9 @@ void main() {
     expect(copied, ['Booked the room for 3 pm']);
   });
 
-  testWidgets('the center button follows the tab: New message, Send image, Send file', (tester) async {
+  testWidgets('the center button follows the tab: nothing on Messages (it has its own composer), then Send image, Send file', (tester) async {
     await openDetail(tester);
-    expect(find.text('New message'), findsOneWidget);
+    expect(find.byKey(const Key('text-field')), findsOneWidget, reason: 'the composer is inline on the Messages tab');
     expect(find.text('What do you want to send?'), findsNothing, reason: 'there is no chooser step any more');
     await openTab(tester, 'Images');
     expect(find.text('Send image'), findsOneWidget);
@@ -151,13 +151,11 @@ void main() {
     expect(find.text('Send file'), findsOneWidget);
     expect(find.byKey(const Key('send-file')), findsOneWidget);
     await openTab(tester, 'Messages');
-    expect(find.byKey(const Key('send-message')), findsOneWidget);
+    expect(find.byKey(const Key('text-field')), findsOneWidget);
   });
 
-  testWidgets('Messages: the button opens the text box directly, and sending reaches the laptop', (tester) async {
+  testWidgets('Messages: the composer is always there, and sending reaches the laptop', (tester) async {
     final d = await openDetail(tester);
-    await tester.tap(find.byKey(const Key('send-message')));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('text-field')), 'hello from the phone');
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('send-text')));
@@ -165,14 +163,13 @@ void main() {
     });
     await tester.pumpAndSettle();
     expect(d.s.netA.sentTexts, ['hello from the phone']);
-    expect(find.byKey(const Key('text-field')), findsNothing, reason: 'the composer closes after sending');
+    expect(find.text('hello from the phone'), findsNothing, reason: 'the box clears after sending, the field stays');
+    expect(find.byKey(const Key('text-field')), findsOneWidget, reason: 'the composer itself stays, ready for the next message');
   });
 
-  testWidgets('Messages: a failed send keeps the text box open with a friendly message', (tester) async {
+  testWidgets('Messages: a failed send keeps the text and shows a friendly message', (tester) async {
     final d = await openDetail(tester);
     d.s.netA.sendScript.add(ApiException('PAYLOAD_TOO_LARGE', 413, 'x'));
-    await tester.tap(find.byKey(const Key('send-message')));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('text-field')), 'too much');
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('send-text')));
@@ -180,7 +177,7 @@ void main() {
     });
     await tester.pump();
     expect(find.text('That is too large to send.'), findsOneWidget);
-    expect(find.byKey(const Key('text-field')), findsOneWidget);
+    expect(find.text('too much'), findsOneWidget);
   });
 
   testWidgets('Images opens the gallery (images only) and Files opens the file explorer, each uploading with progress', (tester) async {
@@ -221,7 +218,7 @@ void main() {
     await tester.pump();
     expect(find.text('Not paired anymore'), findsOneWidget);
     expect(find.byType(TabBar), findsNothing);
-    expect(find.byKey(const Key('send-message')), findsNothing);
+    expect(find.byKey(const Key('text-field')), findsNothing);
 
     await tester.runAsync(() async {
       await tester.tap(find.byKey(const Key('problem-primary')));
