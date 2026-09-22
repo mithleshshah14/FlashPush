@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
 import 'core/errors.dart';
+import 'core/models.dart';
 import 'native.dart';
 import 'net/connection.dart';
 import 'theme.dart';
@@ -57,6 +58,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   static const _devices = 0;
   int _tab = _devices;
   StreamSubscription<SharePayload>? _shareSubscription;
+  StreamSubscription<(LaptopConnection, Item)>? _incomingSubscription;
 
   @override
   void initState() {
@@ -70,12 +72,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     for (final payload in widget.takePendingShares()) {
       _onShare(payload);
     }
+    _incomingSubscription = widget.controller.incomingItems.listen(_onIncoming);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _shareSubscription?.cancel();
+    _incomingSubscription?.cancel();
     widget.controller.discovery.stop();
     super.dispose();
   }
@@ -103,6 +107,18 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _onIncoming((LaptopConnection, Item) event) {
+    final (connection, item) = event;
+    if (!mounted) return;
+    final what = item.isImage ? 'an image' : item.isFile ? 'a file' : 'a message';
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('${connection.laptop.name} sent $what'),
+        action: SnackBarAction(label: 'Open', onPressed: () => _openDetail(connection)),
+      ));
   }
 
   Future<void> _onShare(SharePayload payload) async {

@@ -51,6 +51,20 @@ void main() {
     expect(s.app.rows.firstWhere((r) => r.id == 'laptop-a').wifiUp, isTrue, reason: 'paired and seen on the Wi-Fi');
   });
 
+  test('incomingItems reports which laptop, across pairing and forgetting', () async {
+    final s = await setup(saved: const [laptopA]);
+    await s.app.connect('laptop-a');
+    final seen = <String>[];
+    s.app.incomingItems.listen((event) => seen.add('${event.$1.laptop.name}:${event.$2.id}'));
+
+    s.netA.emit('item-added', s.netA.textItem('hello').toJson());
+    await Future<void>.delayed(const Duration(milliseconds: 50)); // let the background cache write finish before forget() clears the directory
+    expect(seen, ['MITHLESH-PC:hello']);
+
+    await s.app.forget('laptop-a');
+    expect(() => s.netA.emit('item-added', s.netA.textItem('after-forget').toJson()), returnsNormally, reason: 'a forgotten connection is disposed; nothing should throw or leak a listener');
+  });
+
   group('the connection you asked for survives an app restart', () {
     /// A second run of the app over the same stored data, as after closing and reopening it.
     Future<AppController> restart(Setup s) async {

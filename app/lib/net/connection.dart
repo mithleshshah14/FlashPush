@@ -85,12 +85,18 @@ class LaptopConnection extends ChangeNotifier {
   LaptopApi? _api;
   String? _token;
   StreamSubscription<SseEvent>? _events;
+  final _incomingController = StreamController<Item>.broadcast();
 
   Laptop get laptop => _laptop;
   LinkState get state => _state;
   RouteKind get route => _route;
   List<Item> get items => List.unmodifiable(_items);
   bool get connected => _state == LinkState.connected;
+
+  /// Text, image and file items as they arrive live from the laptop (not the initial history load).
+  /// For an in-app "X sent you a message" banner; nothing listens while the app is backgrounded, since
+  /// the connection itself is foreground-only (see setForeground).
+  Stream<Item> get incoming => _incomingController.stream;
 
   /// Wi-Fi icon: reaching the laptop over the local network.
   bool get wifiUp => connected && _route == RouteKind.wifi;
@@ -265,7 +271,10 @@ class LaptopConnection extends ChangeNotifier {
     switch (event.event) {
       case 'item-added':
         final item = Item.fromJson(event.data);
-        if (_items.every((i) => i.id != item.id)) _items = [..._items, item];
+        if (_items.every((i) => i.id != item.id)) {
+          _items = [..._items, item];
+          if (item.fromLaptop) _incomingController.add(item);
+        }
       case 'item-deleted':
         _items = _items.where((i) => i.id != event.data['id']).toList();
       case 'expired':
@@ -426,6 +435,7 @@ class LaptopConnection extends ChangeNotifier {
     _generation++;
     _events?.cancel();
     _api?.close();
+    unawaited(_incomingController.close());
     super.dispose();
   }
 }

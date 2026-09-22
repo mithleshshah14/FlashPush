@@ -54,8 +54,13 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   final Future<void> Function(Duration)? pairingWait;
 
   final Map<String, LaptopConnection> _connections = {};
+  final Map<String, StreamSubscription<Item>> _incomingSubs = {};
+  final _incomingController = StreamController<(LaptopConnection, Item)>.broadcast();
   late String _deviceId;
   bool _foreground = true;
+
+  /// Items that just arrived live from any paired laptop (for an in-app "X sent you a message" banner).
+  Stream<(LaptopConnection, Item)> get incomingItems => _incomingController.stream;
 
   Future<void> init() async {
     _deviceId = await store.deviceId();
@@ -87,6 +92,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     await connection.loadCached();
     await connection.setForeground(_foreground);
     _connections[laptop.id] = connection;
+    _incomingSubs[laptop.id] = connection.incoming.listen((item) => _incomingController.add((connection, item)));
     return connection;
   }
 
@@ -170,6 +176,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Saves an approved pairing and connects at once. A re-pair replaces the old credentials.
   Future<LaptopConnection> finishPairing(PairingApproved approved) async {
+    _incomingSubs.remove(approved.laptop.id)?.cancel();
     _connections.remove(approved.laptop.id)?.dispose();
     await store.save(approved.laptop, credentials: approved.credentials);
     final connection = await _adopt(approved.laptop, approved.credentials);
@@ -190,6 +197,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> forget(String id) async {
     final connection = _connections.remove(id);
     if (connection == null) return;
+    _incomingSubs.remove(id)?.cancel();
     if (settings.activeLaptopId == id) await settings.setActiveLaptopId(null);
     await connection.forget();
     connection.dispose();
@@ -243,9 +251,13 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     discovery.removeListener(_onDiscovery);
+    for (final s in _incomingSubs.values) {
+      s.cancel();
+    }
     for (final c in _connections.values) {
       c.dispose();
     }
+    unawaited(_incomingController.close());
     super.dispose();
   }
 }

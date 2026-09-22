@@ -144,6 +144,20 @@ void main() {
     expect((await h.cache.load('laptop-1')).map((i) => i.id), ['two']);
   });
 
+  test('incoming fires only for genuinely new items from the laptop, not duplicates or the phone\'s own', () async {
+    final h = await harness();
+    await h.connection.connect();
+    final seen = <String>[];
+    h.connection.incoming.listen((item) => seen.add(item.id));
+
+    h.network.emit('item-added', h.network.textItem('two').toJson());
+    h.network.emit('item-added', h.network.textItem('two').toJson()); // duplicate: no second event
+    h.network.emit('item-added', h.network.textItem('three', from: 'phone').toJson()); // the phone's own: not "incoming"
+    await Future<void>.delayed(Duration.zero);
+
+    expect(seen, ['two']);
+  });
+
   test('a revoked session ends the connection as unpaired without reconnecting', () async {
     final h = await harness();
     await h.connection.connect();

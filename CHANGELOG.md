@@ -15,8 +15,8 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Fixed
 - **Autostart never installed on this dev machine** — `node src/cli.js --install-autostart` had never been run here, so nothing launched FlashPush (or its tray icon) at sign-in. Not a code bug; now installed.
 
-### Open question
-- User also asked for a notification when a message/file/image arrives while the app isn't open. The app's connection to the laptop is deliberately foreground-only (battery reasons, see `docs/decisions.md`), so nothing arrives while backgrounded/closed today — a real fix needs either a background/foreground service or a push mechanism, which is a bigger architectural change than a notification call. Not started; needs a scope decision first.
+### Added
+- **Android app:** a foreground in-app banner ("MITHLESH-PC sent a message/an image/a file", tap to open) when an item arrives from the laptop while you're on a different screen. `LaptopConnection.incoming` (new stream, emits only for genuinely new laptop-sent items, not the phone's own or duplicates) aggregates through `AppController.incomingItems` to a listener in `HomeShell`. Chose this over true background/closed-app push: the connection is deliberately foreground-only (battery reasons, `docs/decisions.md`), so nothing can arrive while the app is backgrounded or closed today — background push would need a foreground service or a real push relay, a bigger architectural change than was asked for.
 
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 
