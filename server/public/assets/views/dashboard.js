@@ -1,5 +1,5 @@
 import { clear, h, icon } from '../dom.js';
-import { addressText, firewallCommand, firewallNote, formatSize, groupMessages, itemChip, itemIcon, sendTarget, statusInfo } from '../model.js';
+import { addressText, composerAction, composerRows, firewallCommand, firewallNote, formatSize, groupMessages, itemChip, itemIcon, sendTarget, statusInfo } from '../model.js';
 import { copyButton, routeChip } from '../widgets.js';
 import { daySeparator, messageRow } from './messages.js';
 
@@ -143,16 +143,53 @@ export function createDashboard(ctx) {
       }, icon(tab.icon, 16), tab.label)));
   }
 
+  function composer(device) {
+    let sending = false;
+    const box = h('textarea', { class: 'field composer-field', attrs: { rows: 1, 'aria-label': 'Message', placeholder: 'Type a message or paste a link' } });
+    const error = h('p', { class: 'error-text', attrs: { role: 'alert' } });
+    const sendButton = h('button', { class: 'btn btn-primary', attrs: { type: 'button', 'aria-label': 'Send message' } }, icon('send', 16), h('span', { text: 'Send' }));
+    const sync = () => { sendButton.disabled = sending || !box.value.trim(); };
+
+    async function send() {
+      const value = box.value;
+      if (!value.trim() || sending) return;
+      sending = true;
+      error.textContent = '';
+      sync();
+      try {
+        await ctx.send('POST', '/admin/text', { deviceId: device.deviceId, text: value });
+        box.value = '';
+        box.rows = 1;
+        await ctx.refresh();
+      } catch (failure) {
+        error.textContent = failure.message;
+        sending = false;
+        sync();
+      }
+    }
+
+    box.addEventListener('input', () => { box.rows = composerRows(box.value); sync(); });
+    box.addEventListener('keydown', (event) => {
+      const action = composerAction(event, box.value, sending);
+      if (action === 'none') return;
+      event.preventDefault();
+      if (action === 'send') send();
+    });
+    sendButton.addEventListener('click', send);
+    sync();
+    return h('div', {}, h('div', { class: 'composer' }, box, h('div', { class: 'composer-side' }, sendButton)), error);
+  }
+
   function tabContent(device) {
     if (activeTab === 'messages') {
       const groups = groupMessages(state.items, device.deviceId, Date.now());
-      if (!groups.length) return h('p', { class: 'empty', text: 'No messages yet.' });
-      const thread = h('div', { class: 'thread detail-thread' });
+      const thread = h('div', { class: 'thread detail-thread' },
+        groups.length ? null : h('p', { class: 'empty', text: 'No messages yet. Say hello!' }));
       for (const group of groups) {
         thread.append(daySeparator(group.label));
         for (const message of group.messages) thread.append(messageRow(ctx, message, device.name));
       }
-      return thread;
+      return h('div', {}, thread, composer(device));
     }
     const wantImage = activeTab === 'images';
     const items = state.items.filter((item) => item.deviceId === device.deviceId && item.kind === 'file' && (itemIcon(item) === 'image') === wantImage);
@@ -197,7 +234,8 @@ export function createDashboard(ctx) {
     clearButton.hidden = true;
     clear(pane);
     const back = h('button', { class: 'btn-link back-btn', attrs: { type: 'button' }, on: { click: () => selectDevice(null) } }, icon('chevron', 18), 'Devices');
-    pane.append(h('div', { class: 'detail-head' }, back), tabBar(), tabContent(device));
+    const conn = h('span', { class: 'conn', dataset: { on: String(device.connected) } }, h('span', { class: 'dot', attrs: { 'aria-hidden': 'true' } }), device.connected ? 'Connected' : 'Not connected');
+    pane.append(h('div', { class: 'detail-head' }, back, conn), tabBar(), tabContent(device));
   }
 
   function update(next) {

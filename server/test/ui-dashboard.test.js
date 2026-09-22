@@ -91,6 +91,31 @@ test('Images and Files tabs show only that device\'s items, split by mime', asyn
   assert.doesNotMatch(m.card.textContent, /photo\.jpg/);
 });
 
+test('the detail header shows the connection status', async () => {
+  const m = await mount(base({ devices: [phones.A, phones.B] }));
+  await byClass(m.card, 'device-row')[0].dispatch('click');
+  assert.match(m.card.textContent, /Connected/);
+
+  await byClass(m.card, 'back-btn')[0].dispatch('click');
+  await byClass(m.card, 'device-row')[1].dispatch('click');
+  assert.match(m.card.textContent, /Not connected/);
+});
+
+test('the Messages tab has a composer that sends to that device', async () => {
+  const m = await mount(base({ devices: [phones.A] }));
+  await byClass(m.card, 'device-row')[0].dispatch('click');
+
+  const box = byTag(m.card, 'textarea')[0];
+  const sendButton = byTag(byClass(m.card, 'composer')[0], 'button')[0];
+  box.value = 'hello there';
+  await box.dispatch('input');
+  assert.equal(sendButton.disabled, false);
+
+  await sendButton.dispatch('click');
+  assert.deepEqual(m.calls.send, [['POST', '/admin/text', { deviceId: A, text: 'hello there' }]]);
+  assert.equal(m.calls.refresh, 1);
+});
+
 test('the back button returns to the device list', async () => {
   const m = await mount(base({ devices: [phones.A] }));
   await byClass(m.card, 'device-row')[0].dispatch('click');

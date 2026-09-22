@@ -183,7 +183,8 @@ main { padding: 32px 40px 64px; max-width: 1240px; width: 100%; outline: none; }
 .device-row { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .device-row:hover { border-color: var(--cyan); }
 .device-row svg:last-child { margin-left: auto; color: var(--text-2); flex: none; }
-.detail-head { display: flex; align-items: center; margin-bottom: 4px; }
+.detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.detail-head .conn { margin-left: auto; }
 .back-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px 4px 0; }
 .back-btn svg { transform: rotate(90deg); }
 .tabbar { display: flex; gap: 4px; margin: 12px 0 16px; border-bottom: 1px solid var(--border); }
