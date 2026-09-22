@@ -65,4 +65,13 @@ class Native {
     final where = await _channel.invokeMethod<String>('saveToDownloads', {'path': path, 'name': name});
     return where ?? name;
   }
+
+  /// A human-readable device name (e.g. "Samsung SM-S938B"), or null if it could not be read.
+  Future<String?> deviceModel() async {
+    try {
+      return await _channel.invokeMethod<String>('getDeviceModel');
+    } on Object {
+      return null;
+    }
+  }
 }

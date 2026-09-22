@@ -11,6 +11,9 @@ class AppSettings {
 
   String get phoneName => _prefs.getString('phoneName') ?? defaultPhoneName;
 
+  /// False until a name has been set, by the user or by detecting the device model at startup.
+  bool get hasPhoneName => _prefs.containsKey('phoneName');
+
   Future<void> setPhoneName(String name) => _prefs.setString('phoneName', name.trim().isEmpty ? defaultPhoneName : name.trim());
 
   ThemeMode get themeMode => ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;

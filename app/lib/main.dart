@@ -20,9 +20,15 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final support = await getApplicationSupportDirectory();
 
+  final settings = AppSettings(prefs);
+  if (!settings.hasPhoneName) {
+    final detected = await Native.instance.deviceModel();
+    if (detected != null && detected.trim().isNotEmpty) await settings.setPhoneName(detected);
+  }
+
   final controller = AppController(
     store: LaptopStore(prefs, const FlutterSecretStore()),
-    settings: AppSettings(prefs),
+    settings: settings,
     cache: HistoryCache(Directory('${support.path}${Platform.pathSeparator}history')),
     apiFor: (host, port, pin) => HttpLaptopApi(host, port, pin: pin),
     discovery: DiscoveryController(scanForLaptops),

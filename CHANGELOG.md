@@ -17,6 +17,10 @@ Newest first. Every working day's changes are recorded here and in the affected 
 
 ### Added
 - **Android app:** a foreground in-app banner ("MITHLESH-PC sent a message/an image/a file", tap to open) when an item arrives from the laptop while you're on a different screen. `LaptopConnection.incoming` (new stream, emits only for genuinely new laptop-sent items, not the phone's own or duplicates) aggregates through `AppController.incomingItems` to a listener in `HomeShell`. Chose this over true background/closed-app push: the connection is deliberately foreground-only (battery reasons, `docs/decisions.md`), so nothing can arrive while the app is backgrounded or closed today — background push would need a foreground service or a real push relay, a bigger architectural change than was asked for.
+- **Android app: the phone name defaults to the real device model** ("Samsung SM-S938B") instead of the generic "Android phone", the first time settings load with no name saved yet (`AppSettings.hasPhoneName`, checked in `main.dart`). Read via a new native method (`MainActivity.deviceModel()`, `android.os.Build`) through the existing `flashpush/native` channel — no new Flutter dependency. `Build.MODEL` is the hardware model code, not a marketing name (e.g. "SM-S938B" not "Galaxy S25 Ultra"); there is no reliable API for the marketing name without a lookup table. Still editable in Settings as before. Only applies to *future* pairings — an already-paired device's name on the laptop is fixed at pairing time; renaming and then Re-pairing (not Forget) pushes the new name.
+
+### Fixed
+- **Three duplicate "Android phone" entries on the laptop's Devices list** — not a code bug: repeatedly running `flutter install` during this session's testing uninstalled the app first each time, wiping its stored device id/credentials, so it re-paired as a "new" phone every time. Revoked the two stale entries; the current phone was untouched. Follow-up installs in this session now use `adb install -r` to update in place instead.
 
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 

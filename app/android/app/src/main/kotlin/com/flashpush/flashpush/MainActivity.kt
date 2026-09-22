@@ -31,6 +31,7 @@ class MainActivity : FlutterActivity() {
                         extractShare(intent) { result.success(it) }
                     }
                 }
+                "getDeviceModel" -> result.success(deviceModel())
                 "saveToDownloads" -> {
                     val path = call.argument<String>("path")
                     val name = call.argument<String>("name")
@@ -114,6 +115,14 @@ class MainActivity : FlutterActivity() {
             FileOutputStream(target).use { output -> input.copyTo(output) }
         }
         return mapOf("path" to target.absolutePath, "name" to name)
+    }
+
+    /** A human-readable device name for the default phone name, e.g. "Samsung SM-S938B". Build.MODEL is the
+     * hardware model code, not a marketing name (there is no reliable API for that without a lookup table). */
+    private fun deviceModel(): String {
+        val manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+        val model = Build.MODEL
+        return if (model.contains(manufacturer, ignoreCase = true)) model else "$manufacturer $model"
     }
 
     /** Copies a downloaded file into the public Downloads/FlashPush folder. Returns a human-readable location. */

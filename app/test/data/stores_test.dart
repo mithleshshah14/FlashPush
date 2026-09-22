@@ -84,6 +84,14 @@ void main() {
       await settings.setPhoneName('   ');
       expect(settings.phoneName, AppSettings.defaultPhoneName);
     });
+
+    test('hasPhoneName is false until a name is set, by the user or auto-detection', () async {
+      final settings = AppSettings(prefs);
+      expect(settings.hasPhoneName, isFalse);
+      await settings.setPhoneName('Samsung SM-S938B');
+      expect(settings.hasPhoneName, isTrue);
+      expect(AppSettings(prefs).hasPhoneName, isTrue, reason: 'persists across restarts');
+    });
   });
 
   group('HistoryCache', () {
