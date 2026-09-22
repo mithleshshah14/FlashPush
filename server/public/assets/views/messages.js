@@ -5,6 +5,31 @@ import { chatTarget, composerAction, composerRows, groupMessages, phoneInitial, 
 const signature = (value) => JSON.stringify(value);
 const NEAR_BOTTOM = 48; // px from the bottom that still counts as "reading the latest messages"
 
+function linkParts(value) {
+  return safeLinkParts(value).map((part) =>
+    part.href ? h('a', { class: 'text-link', text: part.text, attrs: { href: part.href, target: '_blank', rel: 'noopener noreferrer' } }) : part.text);
+}
+
+/** One chat bubble. Shared with the Dashboard's per-device Messages tab, so the two views render identically. */
+export function messageRow(ctx, message, phoneName) {
+  const mine = message.side === 'laptop';
+  const copy = h('button', { class: 'icon-button msg-copy', attrs: { type: 'button', 'aria-label': 'Copy message', title: 'Copy' }, on: { click: async () => {
+    ctx.announce((await ctx.copyText(message.text)) ? 'Copied' : 'Copy failed');
+  } } }, icon('copy', 14));
+  const bubble = h('div', { class: 'bubble' }, h('span', { class: 'visually-hidden', text: mine ? 'You: ' : `${phoneName}: ` }), ...linkParts(message.text));
+  const body = h('div', { class: 'msg-body' },
+    message.startsRun && !mine ? h('div', { class: 'msg-name', text: phoneName }) : null,
+    h('div', { class: 'bubble-row' }, bubble, copy),
+    h('div', { class: 'msg-meta', text: message.clock }));
+  const lead = mine ? null : h('span', { class: `avatar${message.startsRun ? '' : ' avatar-spacer'}`, attrs: { 'aria-hidden': 'true' }, text: phoneInitial(phoneName) });
+  return h('div', { class: `msg ${mine ? 'msg-laptop' : 'msg-phone'}${message.startsRun ? ' msg-first' : ''}`, dataset: { id: message.id } }, lead, body);
+}
+
+/** A day separator, exported for the same reason as `messageRow`. */
+export function daySeparator(label) {
+  return h('div', { class: 'day-sep', attrs: { role: 'separator' } }, h('span', { text: label }));
+}
+
 export function createMessages(ctx) {
   let state = null;
   let selectedId = null;
@@ -92,31 +117,12 @@ export function createMessages(ctx) {
   }
 
   // ---- rendering ----
-  function linkParts(value) {
-    return safeLinkParts(value).map((part) =>
-      part.href ? h('a', { class: 'text-link', text: part.text, attrs: { href: part.href, target: '_blank', rel: 'noopener noreferrer' } }) : part.text);
-  }
-
-  function messageRow(message, phoneName) {
-    const mine = message.side === 'laptop';
-    const copy = h('button', { class: 'icon-button msg-copy', attrs: { type: 'button', 'aria-label': 'Copy message', title: 'Copy' }, on: { click: async () => {
-      ctx.announce((await ctx.copyText(message.text)) ? 'Copied' : 'Copy failed');
-    } } }, icon('copy', 14));
-    const bubble = h('div', { class: 'bubble' }, h('span', { class: 'visually-hidden', text: mine ? 'You: ' : `${phoneName}: ` }), ...linkParts(message.text));
-    const body = h('div', { class: 'msg-body' },
-      message.startsRun && !mine ? h('div', { class: 'msg-name', text: phoneName }) : null,
-      h('div', { class: 'bubble-row' }, bubble, copy),
-      h('div', { class: 'msg-meta', text: message.clock }));
-    const lead = mine ? null : h('span', { class: `avatar${message.startsRun ? '' : ' avatar-spacer'}`, attrs: { 'aria-hidden': 'true' }, text: phoneInitial(phoneName) });
-    return h('div', { class: `msg ${mine ? 'msg-laptop' : 'msg-phone'}${message.startsRun ? ' msg-first' : ''}`, dataset: { id: message.id } }, lead, body);
-  }
-
   function addMessage(message, day, phoneName) {
     if (day.key !== rendered.day) {
-      thread.append(h('div', { class: 'day-sep', attrs: { role: 'separator' } }, h('span', { text: day.label })));
+      thread.append(daySeparator(day.label));
       rendered.day = day.key;
     }
-    thread.append(messageRow(message, phoneName));
+    thread.append(messageRow(ctx, message, phoneName));
   }
 
   function placeholder(content) {

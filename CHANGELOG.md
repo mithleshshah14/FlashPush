@@ -2,6 +2,15 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-09-23 (branch `feature/dashboard-device-tabs`)
+
+### Changed
+- **Dashboard (admin UI):** the "Files and images" card is now a **Devices** list; clicking a phone swaps the card in place to **Messages / Images / Files** tabs for that phone (back arrow returns to the list). Reuses the existing chat bubble rendering (`messageRow`/`daySeparator`, now exported from `views/messages.js`) and the existing file/image row rendering, so nothing chat-related is duplicated. `docs/admin-ui.md` updated.
+- Server suite: **355 tests, all passing** (up from 349): 6 new tests for the device/tab pane in `server/test/ui-dashboard.test.js`, plus a `querySelector` addition to the fake-DOM test helper it needed.
+
+### Fixed
+- **Autostart never installed on this dev machine** — `node src/cli.js --install-autostart` had never been run here, so nothing launched FlashPush (or its tray icon) at sign-in. Not a code bug; now installed.
+
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 
 ### Added

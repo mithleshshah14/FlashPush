@@ -1,12 +1,20 @@
 import { clear, h, icon } from '../dom.js';
-import { addressText, firewallCommand, firewallNote, formatSize, itemChip, itemIcon, sendTarget, statusInfo } from '../model.js';
+import { addressText, firewallCommand, firewallNote, formatSize, groupMessages, itemChip, itemIcon, sendTarget, statusInfo } from '../model.js';
 import { copyButton, routeChip } from '../widgets.js';
+import { daySeparator, messageRow } from './messages.js';
 
 const signature = (value) => JSON.stringify(value);
+const TABS = [
+  { id: 'messages', label: 'Messages', icon: 'chat' },
+  { id: 'images', label: 'Images', icon: 'image' },
+  { id: 'files', label: 'Files', icon: 'file' },
+];
 
 export function createDashboard(ctx) {
   let state = null;
-  const shown = { addresses: '', items: '', phones: '' };
+  let selectedDeviceId = null;
+  let activeTab = 'messages';
+  const shown = { addresses: '', phones: '', pane: '' };
 
   // ---- header ----
   const pillLabel = h('span');
@@ -35,11 +43,12 @@ export function createDashboard(ctx) {
     h('p', { class: 'card-note', text: 'Drop files or images here. To write a message, open Messages.' }),
     target, noPhone, dropzone, fileInput, uploads);
 
-  // ---- files and images (messages have their own view) ----
-  const itemList = h('div', { class: 'list' });
+  // ---- devices: click one to see its Messages / Images / Files ----
+  const itemsTitle = h('h2', { text: 'Devices', attrs: { id: 'h-items' } });
   const clearButton = h('button', { class: 'btn-link', text: 'Clear history', attrs: { type: 'button' } });
+  const pane = h('div', {});
   const itemsCard = h('section', { class: 'card', attrs: { 'aria-labelledby': 'h-items' } },
-    h('div', { class: 'card-head' }, h('h2', { text: 'Files and images', attrs: { id: 'h-items' } }), clearButton), itemList);
+    h('div', { class: 'card-head' }, itemsTitle, clearButton), pane);
 
   // ---- firewall help ----
   const command = h('div', { class: 'code-row' }, h('code', { text: firewallCommand }), copyButton(ctx, firewallCommand));
@@ -118,6 +127,79 @@ export function createDashboard(ctx) {
     return h('div', { class: 'row' }, h('span', { class: `chip chip-${chip.direction}`, text: chip.label }), lead, h('div', { class: 'row-text' }, body), actions);
   }
 
+  function deviceRow(device) {
+    return h('button', { class: 'row device-row', attrs: { type: 'button', 'aria-label': `Open ${device.name}` }, on: { click: () => selectDevice(device.deviceId) } },
+      h('span', { class: 'phone-cell' }, h('span', { class: 'icon' }, icon('phone', 20)), device.name),
+      h('span', { class: 'conn', dataset: { on: String(device.connected) } }, h('span', { class: 'dot', attrs: { 'aria-hidden': 'true' } }), device.connected ? 'Connected' : 'Not connected'),
+      icon('chevron', 18));
+  }
+
+  function tabBar() {
+    return h('div', { class: 'tabbar', attrs: { role: 'tablist' } },
+      ...TABS.map((tab) => h('button', {
+        class: 'tab-btn',
+        attrs: { type: 'button', role: 'tab', 'aria-current': activeTab === tab.id ? 'page' : undefined },
+        on: { click: () => selectTab(tab.id) },
+      }, icon(tab.icon, 16), tab.label)));
+  }
+
+  function tabContent(device) {
+    if (activeTab === 'messages') {
+      const groups = groupMessages(state.items, device.deviceId, Date.now());
+      if (!groups.length) return h('p', { class: 'empty', text: 'No messages yet.' });
+      const thread = h('div', { class: 'thread detail-thread' });
+      for (const group of groups) {
+        thread.append(daySeparator(group.label));
+        for (const message of group.messages) thread.append(messageRow(ctx, message, device.name));
+      }
+      return thread;
+    }
+    const wantImage = activeTab === 'images';
+    const items = state.items.filter((item) => item.deviceId === device.deviceId && item.kind === 'file' && (itemIcon(item) === 'image') === wantImage);
+    if (!items.length) return h('p', { class: 'empty', text: wantImage ? 'No images yet.' : 'No files yet.' });
+    const list = h('div', { class: 'list' });
+    for (const item of [...items].reverse()) list.append(itemRow(item, [device]));
+    return list;
+  }
+
+  const paneKey = () => signature([selectedDeviceId, activeTab, state.devices.map((d) => [d.deviceId, d.name, d.connected]), state.items.map((i) => i.id)]);
+
+  function selectDevice(deviceId) {
+    selectedDeviceId = deviceId;
+    activeTab = 'messages';
+    renderPane();
+    shown.pane = paneKey();
+  }
+
+  function selectTab(tabId) {
+    activeTab = tabId;
+    renderPane();
+    shown.pane = paneKey();
+  }
+
+  function renderPane() {
+    const device = state.devices.find((d) => d.deviceId === selectedDeviceId);
+    if (!device) {
+      selectedDeviceId = null;
+      itemsTitle.textContent = 'Devices';
+      clearButton.hidden = state.items.length === 0;
+      clear(pane);
+      if (!state.devices.length) {
+        pane.append(h('p', { class: 'empty', text: 'No phones paired yet. Pair one from your phone.' }));
+        return;
+      }
+      const list = h('div', { class: 'list' });
+      for (const item of state.devices) list.append(deviceRow(item));
+      pane.append(list);
+      return;
+    }
+    itemsTitle.textContent = device.name;
+    clearButton.hidden = true;
+    clear(pane);
+    const back = h('button', { class: 'btn-link back-btn', attrs: { type: 'button' }, on: { click: () => selectDevice(null) } }, icon('chevron', 18), 'Devices');
+    pane.append(h('div', { class: 'detail-head' }, back), tabBar(), tabContent(device));
+  }
+
   function update(next) {
     state = next;
     const info = statusInfo(next.status);
@@ -156,15 +238,11 @@ export function createDashboard(ctx) {
     noPhone.hidden = !phones.disabled;
     dropzone.disabled = phones.disabled;
 
-    const files = next.items.filter((item) => item.kind === 'file');
-    const itemKey = signature([files.map((i) => i.id), next.devices.map((d) => [d.deviceId, d.name])]);
-    if (shown.items !== itemKey) {
-      shown.items = itemKey;
-      clear(itemList);
-      if (!files.length) itemList.append(h('p', { class: 'empty', text: 'No files or images yet. Send one from your phone or drop one here.' }));
-      for (const item of [...files].reverse()) itemList.append(itemRow(item, next.devices));
+    const key = paneKey();
+    if (shown.pane !== key) {
+      shown.pane = key;
+      renderPane();
     }
-    clearButton.hidden = next.items.length === 0;
   }
 
   return { el, update };

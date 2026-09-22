@@ -69,6 +69,18 @@ class FakeElement extends FakeNode {
   focus() {
     this.focused = true;
   }
+
+  /** Just enough for the admin UI's own usage: a bare tag name, e.g. `button.querySelector('span')`. */
+  querySelector(tag) {
+    for (const child of this.children) {
+      if (child instanceof FakeElement) {
+        if (child.tag === tag) return child;
+        const found = child.querySelector(tag);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
 }
 
 /** Installs the globals the UI helpers expect. Call once, before importing the UI modules. */
