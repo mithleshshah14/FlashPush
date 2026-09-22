@@ -64,13 +64,13 @@ export function createDashboard(ctx) {
   const run = (action) => action().catch((error) => ctx.announce(error.message));
   const targetId = () => (target.hidden ? sendTarget(state.devices).defaultId : target.value);
 
-  function startUpload(file) {
+  function startUpload(file, deviceId = targetId()) {
     const name = h('span', { text: file.name });
     const percent = h('span', { class: 'hint', text: '0%' });
     const bar = h('progress', { attrs: { max: 1, value: 0, 'aria-label': `Uploading ${file.name}` } });
     const row = h('div', { class: 'upload' }, name, percent, bar);
     uploads.append(row);
-    ctx.uploadFile({ file, deviceId: targetId(), onProgress: (fraction) => {
+    ctx.uploadFile({ file, deviceId, onProgress: (fraction) => {
       bar.value = fraction;
       percent.textContent = `${Math.round(fraction * 100)}%`;
     } }).then(() => {
@@ -83,7 +83,7 @@ export function createDashboard(ctx) {
       row.append(h('span', { class: 'error-text', text: error.message, attrs: { role: 'alert' } }), dismiss);
     });
   }
-  const startAll = (files) => [...files].forEach(startUpload);
+  const startAll = (files, deviceId) => [...files].forEach((file) => startUpload(file, deviceId));
   dropzone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => {
     startAll(fileInput.files);
@@ -180,6 +180,17 @@ export function createDashboard(ctx) {
     return h('div', {}, h('div', { class: 'composer' }, box, h('div', { class: 'composer-side' }, sendButton)), error);
   }
 
+  function tabUpload(device, wantImage) {
+    const input = h('input', { class: 'visually-hidden', attrs: { type: 'file', multiple: true, tabindex: '-1', 'aria-hidden': 'true', accept: wantImage ? 'image/*' : undefined } });
+    const button = h('button', { class: 'btn btn-secondary btn-small', attrs: { type: 'button' } }, icon('upload', 16), h('span', { text: wantImage ? 'Add images' : 'Add files' }));
+    button.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      startAll(input.files, device.deviceId);
+      input.value = '';
+    });
+    return h('div', { class: 'tab-actions' }, button, input);
+  }
+
   function tabContent(device) {
     if (activeTab === 'messages') {
       const groups = groupMessages(state.items, device.deviceId, Date.now());
@@ -193,10 +204,10 @@ export function createDashboard(ctx) {
     }
     const wantImage = activeTab === 'images';
     const items = state.items.filter((item) => item.deviceId === device.deviceId && item.kind === 'file' && (itemIcon(item) === 'image') === wantImage);
-    if (!items.length) return h('p', { class: 'empty', text: wantImage ? 'No images yet.' : 'No files yet.' });
     const list = h('div', { class: 'list' });
-    for (const item of [...items].reverse()) list.append(itemRow(item, [device]));
-    return list;
+    if (!items.length) list.append(h('p', { class: 'empty', text: wantImage ? 'No images yet.' : 'No files yet.' }));
+    else for (const item of [...items].reverse()) list.append(itemRow(item, [device]));
+    return h('div', {}, tabUpload(device, wantImage), list);
   }
 
   const paneKey = () => signature([selectedDeviceId, activeTab, state.devices.map((d) => [d.deviceId, d.name, d.connected]), state.items.map((i) => i.id)]);

@@ -7,7 +7,8 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ### Changed
 - **Dashboard (admin UI):** the "Files and images" card is now a **Devices** list; clicking a phone swaps the card in place to **Messages / Images / Files** tabs for that phone (back arrow returns to the list). Reuses the existing chat bubble rendering (`messageRow`/`daySeparator`, now exported from `views/messages.js`) and the existing file/image row rendering, so nothing chat-related is duplicated. `docs/admin-ui.md` updated.
 - The Messages tab is a real conversation, not read-only: it has its own compose bar (Enter sends, matching the full Messages page), and the detail header shows Connected / Not connected for that phone.
-- Server suite: **357 tests, all passing** (up from 349): 8 new tests for the device/tab pane in `server/test/ui-dashboard.test.js`, plus a `querySelector` addition to the fake-DOM test helper it needed.
+- The Images and Files tabs each have an "Add images" / "Add files" button that uploads straight to that phone (parity with the app's per-tab send action), instead of only being reachable from the top-of-page Send card.
+- Server suite: **358 tests, all passing** (up from 349): 9 new tests for the device/tab pane in `server/test/ui-dashboard.test.js`, plus `querySelector` and `remove()` added to the fake-DOM test helper.
 
 ### Fixed
 - **Autostart never installed on this dev machine** — `node src/cli.js --install-autostart` had never been run here, so nothing launched FlashPush (or its tray icon) at sign-in. Not a code bug; now installed.

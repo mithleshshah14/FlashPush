@@ -16,6 +16,7 @@ const phones = {
   B: { deviceId: B, name: 'Galaxy', connected: false },
 };
 const NOW = new Date(2026, 8, 22, 15, 30).getTime();
+const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 const base = (overrides = {}) => ({
   status: { state: 'running' },
@@ -29,10 +30,10 @@ const base = (overrides = {}) => ({
 /** Mounts the view against a stubbed context and returns handles to its parts. */
 async function mount(state) {
   const { createDashboard } = await load();
-  const calls = { send: [], refresh: 0 };
+  const calls = { send: [], refresh: 0, upload: [] };
   const ctx = {
     send: async (method, url, body) => { calls.send.push([method, url, body]); },
-    uploadFile: async () => {},
+    uploadFile: async ({ file, deviceId }) => { calls.upload.push([file.name, deviceId]); },
     confirmDialog: async () => true,
     copyText: async () => true,
     refresh: async () => { calls.refresh += 1; },
@@ -114,6 +115,28 @@ test('the Messages tab has a composer that sends to that device', async () => {
   await sendButton.dispatch('click');
   assert.deepEqual(m.calls.send, [['POST', '/admin/text', { deviceId: A, text: 'hello there' }]]);
   assert.equal(m.calls.refresh, 1);
+});
+
+test('Images and Files tabs each have an upload button that sends to the open device', async () => {
+  const m = await mount(base({ devices: [phones.A, phones.B] }));
+  await byClass(m.card, 'device-row')[1].dispatch('click'); // Galaxy (B)
+
+  const tabs = byClass(m.card, 'tab-btn');
+  await tabs[1].dispatch('click'); // Images
+  const imageInput = byTag(m.card, 'input').find((i) => i.attributes.type === 'file');
+  assert.equal(imageInput.attributes.accept, 'image/*');
+  imageInput.files = [{ name: 'a.jpg' }];
+  await imageInput.dispatch('change');
+  await settle();
+
+  await tabs[2].dispatch('click'); // Files
+  const fileInput = byTag(m.card, 'input').find((i) => i.attributes.type === 'file');
+  assert.equal(fileInput.attributes.accept, undefined, 'the Files tab accepts any file');
+  fileInput.files = [{ name: 'doc.pdf' }];
+  await fileInput.dispatch('change');
+  await settle();
+
+  assert.deepEqual(m.calls.upload, [['a.jpg', B], ['doc.pdf', B]]);
 });
 
 test('the back button returns to the device list', async () => {

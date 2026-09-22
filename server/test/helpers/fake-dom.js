@@ -35,12 +35,19 @@ class FakeElement extends FakeNode {
   }
 
   append(...nodes) {
-    for (const node of nodes) this.children.push(node instanceof FakeNode ? node : new FakeText(node));
+    for (const node of nodes) {
+      if (node instanceof FakeElement) node.parent = this;
+      this.children.push(node instanceof FakeNode ? node : new FakeText(node));
+    }
   }
 
   replaceChildren(...nodes) {
     this.children = [];
     this.append(...nodes);
+  }
+
+  remove() {
+    if (this.parent) this.parent.children = this.parent.children.filter((child) => child !== this);
   }
 
   setAttribute(name, value) {
