@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -67,15 +68,29 @@ class MainActivity : FlutterActivity() {
 
     /**
      * Decodes any format the OS understands (BitmapFactory has decoded HEIC natively since
-     * Android 9) and re-encodes it as a high-quality JPEG. Returns null if decoding fails, so the
+     * Android 9) and re-encodes it at max JPEG quality. Returns null if decoding fails, so the
      * caller can fall back to sending the original file.
      */
     private fun convertToJpg(source: File): String? {
         val bitmap = BitmapFactory.decodeFile(source.absolutePath) ?: return null
         val target = File(cacheDir, "jpg_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
-        FileOutputStream(target).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out) }
+        FileOutputStream(target).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out) }
         bitmap.recycle()
+        copyOrientation(source, target)
         return target.absolutePath
+    }
+
+    /** Bitmap.compress() drops all EXIF data, so the photo can come out sideways without this. */
+    private fun copyOrientation(source: File, target: File) {
+        try {
+            val orientation = ExifInterface(source.absolutePath).getAttribute(ExifInterface.TAG_ORIENTATION) ?: return
+            ExifInterface(target.absolutePath).apply {
+                setAttribute(ExifInterface.TAG_ORIENTATION, orientation)
+                saveAttributes()
+            }
+        } catch (e: Exception) {
+            // Best-effort: a missing/unreadable orientation tag just means the photo stays as decoded.
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
