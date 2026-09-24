@@ -1,8 +1,4 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../native.dart';
@@ -17,23 +13,18 @@ class PickedFile {
 /// Formats sent as-is: PNG and GIF keep transparency/animation, JPG needs no re-encoding.
 const _formatsKeptAsIs = {'png', 'gif', 'jpg', 'jpeg'};
 
-/// Re-encodes anything that isn't already JPG/PNG/GIF (e.g. HEIC, WEBP, BMP) to a high-quality
-/// JPG before it's sent, so the receiving side only ever deals with a handful of formats.
-/// Falls back to the original file if decoding fails.
+/// Re-encodes anything that isn't already JPG/PNG/GIF (e.g. Samsung's default HEIC, WEBP, BMP) to
+/// a high-quality JPG via the OS decoder, so the receiving side only ever deals with a handful of
+/// formats. Falls back to the original file if the OS can't decode it.
 Future<PickedFile> convertImageToJpgIfNeeded(PickedFile file) async {
   final ext = file.name.split('.').last.toLowerCase();
   if (_formatsKeptAsIs.contains(ext)) return file;
 
-  final decoded = img.decodeImage(await File(file.path).readAsBytes());
-  if (decoded == null) return file;
+  final jpgPath = await Native.instance.convertToJpg(file.path);
+  if (jpgPath == null) return file;
 
-  final jpgBytes = img.encodeJpg(decoded, quality: 95);
-  final tempDir = await getTemporaryDirectory();
   final baseName = file.name.contains('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
-  final jpgName = '$baseName.jpg';
-  final jpgPath = '${tempDir.path}/$jpgName';
-  await File(jpgPath).writeAsBytes(jpgBytes);
-  return PickedFile(jpgPath, jpgName);
+  return PickedFile(jpgPath, '$baseName.jpg');
 }
 
 /// Everything the screens need from the Android platform, in one place so tests can replace it.

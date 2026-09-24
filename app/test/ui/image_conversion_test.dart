@@ -1,35 +1,39 @@
-import 'dart:io';
-
 import 'package:flashpush/ui/platform_actions.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
-class FakePathProvider extends PathProviderPlatform {
-  @override
-  Future<String?> getTemporaryPath() async => Directory.systemTemp.path;
-}
+const _channel = 'flashpush/native';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  PathProviderPlatform.instance = FakePathProvider();
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('BMP gets converted to a JPG', () async {
-    final bmp = img.encodeBmp(img.Image(width: 4, height: 4));
-    final source = File('${Directory.systemTemp.path}/probe.bmp')..writeAsBytesSync(bmp);
+  void mockPlatform(Future<Object?> Function(MethodCall call) handler) {
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel(_channel), handler);
+    addTearDown(() => binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel(_channel), null));
+  }
 
-    final result = await convertImageToJpgIfNeeded(PickedFile(source.path, 'probe.bmp'));
-
-    expect(result.name, 'probe.jpg');
-    expect(img.decodeJpg(File(result.path).readAsBytesSync()), isNotNull);
-    source.deleteSync();
-    File(result.path).deleteSync();
+  test('a HEIC (or other non-JPG/PNG/GIF) file is sent through the native converter', () async {
+    mockPlatform((call) async {
+      expect(call.method, 'convertToJpg');
+      expect(call.arguments, {'path': '/cache/shared/photo.heic'});
+      return '/cache/jpg_123_photo.jpg';
+    });
+    final result = await convertImageToJpgIfNeeded(const PickedFile('/cache/shared/photo.heic', 'photo.heic'));
+    expect(result.path, '/cache/jpg_123_photo.jpg');
+    expect(result.name, 'photo.jpg');
   });
 
-  test('PNG and GIF pass through untouched', () async {
-    final png = File('${Directory.systemTemp.path}/probe.png');
-    final result = await convertImageToJpgIfNeeded(PickedFile(png.path, 'probe.png'));
-    expect(result.path, png.path);
-    expect(result.name, 'probe.png');
+  test('PNG and GIF pass through untouched, no native call made', () async {
+    mockPlatform((call) async => throw StateError('should not be called for ${call.method}'));
+    final png = const PickedFile('/cache/shared/probe.png', 'probe.png');
+    expect(await convertImageToJpgIfNeeded(png), same(png));
+  });
+
+  test('falls back to the original file if the OS could not decode it', () async {
+    mockPlatform((call) async => null);
+    final source = const PickedFile('/cache/shared/mystery.xyz', 'mystery.xyz');
+    final result = await convertImageToJpgIfNeeded(source);
+    expect(result.path, source.path);
+    expect(result.name, source.name);
   });
 }

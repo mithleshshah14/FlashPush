@@ -2,6 +2,8 @@ package com.flashpush.flashpush
 
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -47,9 +49,33 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                 }
+                "convertToJpg" -> {
+                    val path = call.argument<String>("path")
+                    if (path == null) {
+                        result.error("bad_args", "path is required", null)
+                    } else {
+                        thread {
+                            val converted = convertToJpg(File(path))
+                            runOnUiThread { result.success(converted) }
+                        }
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /**
+     * Decodes any format the OS understands (BitmapFactory has decoded HEIC natively since
+     * Android 9) and re-encodes it as a high-quality JPEG. Returns null if decoding fails, so the
+     * caller can fall back to sending the original file.
+     */
+    private fun convertToJpg(source: File): String? {
+        val bitmap = BitmapFactory.decodeFile(source.absolutePath) ?: return null
+        val target = File(cacheDir, "jpg_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
+        FileOutputStream(target).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out) }
+        bitmap.recycle()
+        return target.absolutePath
     }
 
     override fun onNewIntent(intent: Intent) {

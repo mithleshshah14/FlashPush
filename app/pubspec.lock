@@ -9,14 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  archive:
-    dependency: transitive
-    description:
-      name: archive
-      sha256: "6c5bcd986e06b94e3c40244af471750840a3d2341d1f9763a1100a14add517b4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.0"
   args:
     dependency: transitive
     description:
@@ -248,14 +240,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
-  image:
-    dependency: "direct main"
-    description:
-      name: image
-      sha256: a1e7f4951e538a568e14b856702afc9ae1d2f4b202daced8d22c1b9cd211ce89
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.10.1"
   jni:
     dependency: transitive
     description:
@@ -401,7 +385,7 @@ packages:
     source: hosted
     version: "2.2.2"
   path_provider_platform_interface:
-    dependency: "direct dev"
+    dependency: transitive
     description:
       name: path_provider_platform_interface
       sha256: "484838772624c3a4b94f1e44a3e19897fee738f2d5c4ce448443b0417f7c9dda"
@@ -440,14 +424,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
-  posix:
-    dependency: transitive
-    description:
-      name: posix
-      sha256: bc1bad54ad2b735816e31f8d4600cfde6c7839975085ddfbca48b6c9f7c4044e
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.5.2"
   pub_semver:
     dependency: transitive
     description:

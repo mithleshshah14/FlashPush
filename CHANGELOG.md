@@ -5,10 +5,12 @@ Newest first. Every working day's changes are recorded here and in the affected 
 ## 2026-09-24 — Image conversion (branch `feature/jpg-image-conversion`)
 
 ### Added
-- **Android app:** picking an image to send now converts anything that isn't already JPG/PNG/GIF (HEIC, WEBP, BMP, TIFF, ...) to a high-quality JPG (`app/lib/ui/platform_actions.dart`, `convertImageToJpgIfNeeded`) before it's queued. PNG and GIF are sent untouched (transparency/animation preserved); if decoding fails, the original file is sent as-is.
+- **Android app:** picking an image to send now converts anything that isn't already JPG/PNG/GIF — notably Samsung's default HEIC camera format, also WEBP/BMP/TIFF/... — to a high-quality JPG before it's queued. Decoding/re-encoding is done natively (`MainActivity.kt`, `convertToJpg` via Android's `BitmapFactory`, which has decoded HEIC since Android 9) and exposed to Dart through `Native.convertToJpg` (`app/lib/ui/platform_actions.dart`, `convertImageToJpgIfNeeded`). PNG and GIF are sent untouched (transparency/animation preserved); if the OS can't decode a file, the original is sent as-is.
 
 ### Verified
 - `cd app && flutter test`: **183 tests, all passing.**
+- `cd app && flutter build apk --debug`: builds clean (confirms the Kotlin side compiles).
+- **Not verified on a real device:** an actual Samsung HEIC photo end-to-end.
 
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 
