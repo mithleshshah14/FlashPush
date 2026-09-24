@@ -2,15 +2,23 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-09-25 — Stale paired-device cleanup (branch `feature/jpg-image-conversion`)
+
+### Found and fixed (data, not code)
+- The laptop's dashboard showed the same physical phone twice. Cause: `flutter install` (unlike `adb install -r`) uninstalls first, wiping the app's secure storage — including its device identity — so the next launch re-pairs under a brand-new `deviceId` and leaves the old one orphaned in `devices.json`. Confirmed via `GET /admin/state` (three paired entries, two named "Samsung SM-S938B") and removed the two stale ones with `DELETE /admin/devices/:id`, leaving the one real, currently-connected device.
+- Going forward: use `adb install -r` for manual test installs so the app's identity (and pairing) survives, exactly like it does for real users on Play Store updates.
+
 ## 2026-09-24 — Image conversion (branch `feature/jpg-image-conversion`)
 
 ### Added
 - **Android app:** picking an image to send now converts anything that isn't already JPG/PNG/GIF — notably Samsung's default HEIC camera format, also WEBP/BMP/TIFF/... — to a high-quality JPG before it's queued. Decoding/re-encoding is done natively (`MainActivity.kt`, `convertToJpg` via Android's `BitmapFactory`, which has decoded HEIC since Android 9) and exposed to Dart through `Native.convertToJpg` (`app/lib/ui/platform_actions.dart`, `convertImageToJpgIfNeeded`). PNG and GIF are sent untouched (transparency/animation preserved); if the OS can't decode a file, the original is sent as-is.
 
+### Fixed
+- First real-device test (a Samsung 5 MB HEIC) came out only 1.5 MB and visibly worse: HEIC's HEVC compression is much more efficient than JPEG at the same visual quality, so quality 95 wasn't enough to match it. Bumped to quality 100 (JPEG's max, still technically lossy). Also: `Bitmap.compress()` strips all EXIF data, which could rotate the converted photo wrong — the source's orientation tag is now copied onto the JPEG output.
+
 ### Verified
-- `cd app && flutter test`: **183 tests, all passing.**
-- `cd app && flutter build apk --debug`: builds clean (confirms the Kotlin side compiles).
-- **Not verified on a real device:** an actual Samsung HEIC photo end-to-end.
+- `cd app && flutter test`: **182 tests, all passing.**
+- `cd app && flutter build apk --debug`: builds clean (confirms the Kotlin side compiles); installed on a real Samsung SM-S938B (Android 16) and confirmed a HEIC photo converts to JPG and sends.
 
 ## 2026-09-22 — Windows shell (branch `feature/windows-shell`)
 
