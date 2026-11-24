@@ -112,6 +112,8 @@ class MainActivity : FlutterActivity() {
         } else {
             getStreamListExtra(intent)?.let { uris.addAll(it) }
         }
+        // Some gallery apps only put the shared items in ClipData (which also carries the read grant).
+        if (uris.isEmpty()) intent.clipData?.let { clip -> for (i in 0 until clip.itemCount) clip.getItemAt(i).uri?.let { uris.add(it) } }
         thread {
             val files = uris.mapNotNull { uri ->
                 try {

@@ -27,6 +27,13 @@ Future<PickedFile> convertImageToJpgIfNeeded(PickedFile file) async {
   return PickedFile(jpgPath, '$baseName.jpg');
 }
 
+/// Image formats a share is converted from (other shared files, PDFs and so on, go as they are).
+const _convertibleImages = {'heic', 'heif', 'webp', 'bmp', 'tif', 'tiff', 'avif'};
+
+/// Shared files: images in [_convertibleImages] become JPG like picked ones; everything else is untouched.
+Future<PickedFile> convertSharedImage(PickedFile file) =>
+    _convertibleImages.contains(file.name.split('.').last.toLowerCase()) ? convertImageToJpgIfNeeded(file) : Future.value(file);
+
 /// Everything the screens need from the Android platform, in one place so tests can replace it.
 class PlatformActions {
   const PlatformActions({required this.pickFiles, required this.saveToDownloads, required this.openLink});

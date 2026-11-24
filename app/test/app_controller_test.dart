@@ -188,6 +188,23 @@ void main() {
     expect(s.netA.operationIds.length, 2);
   });
 
+  test('a share that starts the app waits for the reconnect instead of being dropped', () async {
+    final s = await setup();
+    await s.app.connect('laptop-a'); // remembered as the laptop to resume
+    // The share opens the app: a fresh start over the same data, the share handled right after init().
+    final app = AppController(
+      store: s.store,
+      settings: s.settings,
+      cache: s.cache,
+      apiFor: (host, port, pin) => s.netA.apiFor(host, port, pin),
+      discovery: DiscoveryController(() async => [], wait: (d) async {}, retryDelays: const []),
+    );
+    await app.init();
+    addTearDown(app.dispose);
+    expect(await app.handleShare(SharePayload(text: 'from the gallery')), ShareResult.sent);
+    expect(s.netA.sentTexts, ['from the gallery']);
+  });
+
   test('going to the background pauses connections; coming back refetches', () async {
     final s = await setup();
     await s.app.connect('laptop-a');

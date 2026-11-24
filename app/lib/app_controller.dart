@@ -228,15 +228,41 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Sends what another app shared to the connected laptop.
+  /// A share often starts the app, while it is still reconnecting: wait for that connection
+  /// ([shareConnectWait]) instead of dropping what was shared.
   Future<ShareResult> handleShare(SharePayload payload) async {
-    final connection = active;
-    if (connection == null || !connection.connected) return ShareResult.needsConnection;
+    // On a cold start the laptop being resumed may not have started connecting yet.
+    final resuming = settings.autoReconnect ? _connections[settings.activeLaptopId] : null;
+    final connection = active ?? resuming;
+    if (connection == null || !await _connectedWithin(connection, shareConnectWait)) return ShareResult.needsConnection;
     final text = payload.text;
     if (text != null && text.trim().isNotEmpty) await transfer.sendText(connection, text);
     for (final file in payload.files) {
       await transfer.sendFile(connection, File(file.path), file.name);
     }
     return ShareResult.sent;
+  }
+
+  static const shareConnectWait = Duration(seconds: 20);
+
+  /// True once [c] is connected; false after [timeout], or at once on a state that needs re-pairing.
+  Future<bool> _connectedWithin(LaptopConnection c, Duration timeout) async {
+    if (c.connected) return true;
+    final done = Completer<bool>();
+    void check() {
+      if (done.isCompleted) return;
+      if (c.connected) {
+        done.complete(true);
+      } else if (const {LinkState.certChanged, LinkState.unpaired, LinkState.notPaired}.contains(c.state)) {
+        done.complete(false);
+      }
+    }
+    c.addListener(check);
+    try {
+      return await done.future.timeout(timeout, onTimeout: () => c.connected);
+    } finally {
+      c.removeListener(check);
+    }
   }
 
   @override
