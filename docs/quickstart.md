@@ -26,6 +26,8 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
 Or copy `app-debug.apk` to the phone and open it.
 
+Keep the `-r` (or reuse `flutter run`, which also updates in place): a plain uninstall + install wipes the app's secure storage, including its device identity, so it re-pairs as a "new" phone and leaves the old pairing orphaned on the laptop (visible as a duplicate device on the dashboard until removed with `DELETE /admin/devices/:id`).
+
 ## 3. Pair
 
 1. On the phone open **FlashPush** → **Devices**. Your laptop should appear (if not, pull down to rescan, or use **Add by address** and type the laptop's IP shown on the Dashboard).
