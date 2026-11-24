@@ -38,7 +38,7 @@ async function startApi(t, limitOverrides = {}) {
     ops,
     limits,
     receiveDir,
-    addresses: () => [{ ip: '192.168.1.6', kind: 'lan' }],
+    addresses: () => [{ ip: '192.168.1.6', kind: 'lan' }, { name: 'test-pc.tail1234.ts.net', kind: 'tailscale-name' }],
     log: () => {},
   });
   const server = http.createServer(api.handler);
