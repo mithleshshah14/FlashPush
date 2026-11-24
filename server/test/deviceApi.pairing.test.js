@@ -61,7 +61,8 @@ test('the full pairing flow over HTTP releases the secret, laptop and addresses'
   assert.equal(done.json.state, 'approved');
   assert.equal(c.b64uDecode(done.json.secret, 32).length, 32);
   assert.deepEqual(done.json.laptop, { id: 'aaaaaaaa-0000-4000-8000-0000000000aa', name: 'TEST-PC' });
-  assert.deepEqual(done.json.addresses, [{ ip: '192.168.1.6', kind: 'lan' }]);
+  // Every entry has `ip` (the phone app reads it): the MagicDNS name goes out as a Tailscale address (24 Nov fix).
+  assert.deepEqual(done.json.addresses, [{ ip: '192.168.1.6', kind: 'lan' }, { ip: 'test-pc.tail1234.ts.net', kind: 'tailscale' }]);
 });
 
 test('pair status with a wrong proof is PAIR_NOT_FOUND', async (t) => {

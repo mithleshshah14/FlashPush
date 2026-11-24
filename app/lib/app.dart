@@ -105,8 +105,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _onShare(SharePayload payload) async {
+  Future<void> _onShare(SharePayload shared) async {
     try {
+      final files = [for (final f in shared.files) await convertSharedImage(PickedFile(f.path, f.name))];
+      final payload = SharePayload(text: shared.text, files: [for (final f in files) SharedFile(f.path, f.name)]);
       final result = await widget.controller.handleShare(payload);
       if (result == ShareResult.sent) {
         _say('Sent to laptop');

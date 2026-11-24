@@ -65,4 +65,8 @@ class Native {
     final where = await _channel.invokeMethod<String>('saveToDownloads', {'path': path, 'name': name});
     return where ?? name;
   }
+
+  /// Decodes [path] with the OS image decoder (handles HEIC, WEBP, BMP, ...) and re-encodes it as
+  /// a high-quality JPEG, returning the new file's path. Null if the OS couldn't decode it.
+  Future<String?> convertToJpg(String path) => _channel.invokeMethod<String>('convertToJpg', {'path': path});
 }

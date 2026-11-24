@@ -10,6 +10,30 @@ class PickedFile {
   final String name;
 }
 
+/// Formats sent as-is: PNG and GIF keep transparency/animation, JPG needs no re-encoding.
+const _formatsKeptAsIs = {'png', 'gif', 'jpg', 'jpeg'};
+
+/// Re-encodes anything that isn't already JPG/PNG/GIF (e.g. Samsung's default HEIC, WEBP, BMP) to
+/// a high-quality JPG via the OS decoder, so the receiving side only ever deals with a handful of
+/// formats. Falls back to the original file if the OS can't decode it.
+Future<PickedFile> convertImageToJpgIfNeeded(PickedFile file) async {
+  final ext = file.name.split('.').last.toLowerCase();
+  if (_formatsKeptAsIs.contains(ext)) return file;
+
+  final jpgPath = await Native.instance.convertToJpg(file.path);
+  if (jpgPath == null) return file;
+
+  final baseName = file.name.contains('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
+  return PickedFile(jpgPath, '$baseName.jpg');
+}
+
+/// Image formats a share is converted from (other shared files, PDFs and so on, go as they are).
+const _convertibleImages = {'heic', 'heif', 'webp', 'bmp', 'tif', 'tiff', 'avif'};
+
+/// Shared files: images in [_convertibleImages] become JPG like picked ones; everything else is untouched.
+Future<PickedFile> convertSharedImage(PickedFile file) =>
+    _convertibleImages.contains(file.name.split('.').last.toLowerCase()) ? convertImageToJpgIfNeeded(file) : Future.value(file);
+
 /// Everything the screens need from the Android platform, in one place so tests can replace it.
 class PlatformActions {
   const PlatformActions({required this.pickFiles, required this.saveToDownloads, required this.openLink});
@@ -26,7 +50,9 @@ class PlatformActions {
   factory PlatformActions.system() => PlatformActions(
         pickFiles: ({required bool imagesOnly}) async {
           final files = await FilePicker.pickFiles(type: imagesOnly ? FileType.image : FileType.any);
-          return [for (final f in files) if (f.path != null) PickedFile(f.path!, f.name)];
+          final picked = [for (final f in files) if (f.path != null) PickedFile(f.path!, f.name)];
+          if (!imagesOnly) return picked;
+          return [for (final f in picked) await convertImageToJpgIfNeeded(f)];
         },
         saveToDownloads: (path, name) => Native.instance.saveToDownloads(path, name),
         openLink: (url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),

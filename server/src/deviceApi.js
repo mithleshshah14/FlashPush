@@ -17,6 +17,9 @@ function createDeviceApi({ identity, devices, sessions, pairing, store, ops, lim
   const streams = new Map(); // deviceId -> Set<sse>
   const laptop = { id: identity.laptopId, name: identity.name };
   const routeOf = (req) => classifyIp(web.remoteAddress(req));
+  // Phones read every address's `ip` (app 2026-09). The MagicDNS entry is `{name, kind:'tailscale-name'}`, which made
+  // the app fail right after pairing approval and on every connect: send the name in `ip`, as a Tailscale address.
+  const phoneAddresses = () => addresses().map((a) => (a.ip ? a : { ip: a.name, kind: 'tailscale' }));
 
   // ---- authentication -------------------------------------------------------
 
@@ -109,7 +112,7 @@ function createDeviceApi({ identity, devices, sessions, pairing, store, ops, lim
       deviceId: url.searchParams.get('deviceId'),
       proof: web.headerValue(req, 'x-pair-proof'),
     });
-    if (out.state === 'approved') Object.assign(out, { laptop, addresses: addresses() });
+    if (out.state === 'approved') Object.assign(out, { laptop, addresses: phoneAddresses() });
     web.sendJson(res, 200, out);
   }
 
@@ -121,7 +124,7 @@ function createDeviceApi({ identity, devices, sessions, pairing, store, ops, lim
     if (result !== 'ok') throw fail(req, result === 'unknown' ? 'DEVICE_NOT_PAIRED' : 'UNAUTHORIZED');
     devices.touch(credentials.deviceId, routeOf(req));
     const session = sessions.create(credentials.deviceId);
-    web.sendJson(res, 200, { sessionToken: session.token, expiresAt: session.expiresAt, laptop, addresses: addresses() });
+    web.sendJson(res, 200, { sessionToken: session.token, expiresAt: session.expiresAt, laptop, addresses: phoneAddresses() });
   }
 
   function disconnect(req, res) {
