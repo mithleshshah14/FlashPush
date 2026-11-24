@@ -2,6 +2,14 @@
 
 Newest first. Every working day's changes are recorded here and in the affected files under `docs/`.
 
+## 2026-11-24 — Pairing failed right after approval (branch `fix/phone-address-names`)
+
+### Fixed
+- **Server:** with Tailscale running, the address list sent to phones (pair status and session) included the MagicDNS entry `{name, kind:'tailscale-name'}`, which has no `ip`. The app reads `ip` on every address, so it failed with "Something went wrong" right after approval and on every connect. Phones now get that entry as `{ip: <name>, kind:'tailscale'}` (`server/src/deviceApi.js`); the admin page keeps the original shape. No app change needed.
+
+### Verified
+- `cd server && npm test`: **349 tests, all passing** (the pairing test now includes a MagicDNS entry).
+
 ## 2026-09-25 — Stale paired-device cleanup (branch `feature/jpg-image-conversion`)
 
 ### Found and fixed (data, not code)
